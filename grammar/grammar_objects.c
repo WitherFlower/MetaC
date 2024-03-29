@@ -12,9 +12,9 @@ void fatal(char *format, ...) {
     exit(1);
 }
 
-union object;
+union Object;
 
-typedef union object *oop;
+typedef union Object *oop;
 
 // List
 
@@ -75,15 +75,21 @@ List *newList(int size) {
 
 enum Types {
     Grammar,
-    Definition,
-    Expression,
+    Declaration,
+    Assignment,
+    Binary,
+    Unary,
+    Leaf,
 };
 
 char *getTypeString(enum Types type) {
     switch (type) {
         case Grammar: return "Grammar";
-        case Definition: return "Definition";
-        case Expression: return "Expression";
+        case Declaration: return "Declaration";
+        case Assignment: return "Assignment";
+        case Binary: return "Binary";
+        case Unary: return "Unary";
+        case Leaf: return "Leaf";
     }
 }
 
@@ -92,24 +98,66 @@ struct Grammar {
     List *definitions;
 };
 
-struct Definition {
+struct Declaration {
     int type;
     oop indentifier;
     oop expression;
 };
 
-struct Expression {
+struct Assignment {
     int type;
-    List *sequences;
+    oop variable;
+    oop rule;
 };
 
-struct 
+struct Binary {
+    int type;
+    int operator;
+    oop leftExpression;
+    oop rightExpression;
+};
 
-union object {
+enum BinaryOperators {
+    Sequence,
+    Alternation,
+};
+
+struct Unary {
+    int type;
+    int operator;
+    oop expression;
+};
+
+enum UnaryOperators {
+    Star,
+    Plus,
+    Optional,
+    And,
+    Not,
+};
+
+struct Leaf {
+    int type;
+    int leafType;
+    oop expression;
+};
+
+enum LeafTypes {
+    Dot,
+    String,
+    CharacterClass,
+    Action,
+    RuleIdentifier,
+};
+
+union Object {
     int type;
     struct Grammar Grammar;
-    struct Definition Definition;
-    struct Expression Expression;
+    struct Declaration Declaration;
+    struct Assignment Assignment;
+    struct Binary Binary;
+    struct Unary Unary;
+    struct Leaf Leaf;
 };
 
 oop _newObject(enum Types type, size_t size) {

@@ -4,6 +4,9 @@ Questions :
 
 Destroy ?
 Begin End chevrons <>
+why not enum Types type in the object declarations ?
+better names for the unary operators ?
+shouldn't assignment be a binary operator ?
 
 - [x] Create Binary/Unary/Leaf types with inner enums
         Only Binary was needed, not sure about Leaf for now
