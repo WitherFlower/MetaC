@@ -308,7 +308,7 @@ YY_ACTION(void) yy_3_num(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_3_num\n"));
   {
-#line 89
+#line 75
    __ = x ;
   }
 #undef yythunkpos
@@ -324,7 +324,7 @@ YY_ACTION(void) yy_2_num(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_2_num\n"));
   {
-#line 88
+#line 74
    __ = x ;
   }
 #undef yythunkpos
@@ -340,7 +340,7 @@ YY_ACTION(void) yy_1_num(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_num\n"));
   {
-#line 84
+#line 70
   
                                             printf("Creating IntLiteral %d\n", atoi(yytext));
                                             __ = newIntLiteral(atoi(yytext));
@@ -358,7 +358,7 @@ YY_ACTION(void) yy_1_ident(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ident\n"));
   {
-#line 79
+#line 65
   
                                             printf("Creating Ident %c\n", yytext[0]);
                                             __ = newIdent(yytext[0]);
@@ -377,10 +377,10 @@ YY_ACTION(void) yy_1_assign(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_assign\n"));
   {
-#line 74
+#line 60
   
                                             printf("Creating Assign\n");
-                                            __ = newExpression(Assign, l, r);
+                                            __ = newBinary(Assign, l, r);
                                         ;
   }
 #undef yythunkpos
@@ -398,15 +398,9 @@ YY_ACTION(void) yy_3_prod(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_3_prod\n"));
   {
-#line 64
+#line 56
   
-                                            if (localNewExpression != NULL) {
-                                                __ = localNewExpression;
-                                                localNewExpression = NULL;
-                                            } else {
-                                                printf("prod : propagating %s\n", getTypeString(l->type));
-                                                __ = l;
-                                            }
+                                            __ = l;
                                         ;
   }
 #undef yythunkpos
@@ -424,10 +418,10 @@ YY_ACTION(void) yy_2_prod(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_2_prod\n"));
   {
-#line 60
+#line 52
   
                                             printf("Creating Div\n");
-                                            localNewExpression = newExpression(Div, l, r);
+                                            l = newBinary(Div, l, r);
                                         ;
   }
 #undef yythunkpos
@@ -445,10 +439,10 @@ YY_ACTION(void) yy_1_prod(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_prod\n"));
   {
-#line 56
+#line 48
   
                                             printf("Creating Mult\n");
-                                            localNewExpression = newExpression(Mult, l, r);
+                                            l = newBinary(Mult, l, r);
                                         ;
   }
 #undef yythunkpos
@@ -466,15 +460,9 @@ YY_ACTION(void) yy_3_sum(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_3_sum\n"));
   {
-#line 46
+#line 44
   
-                                            if (localNewExpression != NULL) {
-                                                __ = localNewExpression;
-                                                localNewExpression = NULL;
-                                            } else {
-                                                printf("sum : propagating %s\n", getTypeString(l->type));
-                                                __ = l;
-                                            }
+                                            __ = l;
                                         ;
   }
 #undef yythunkpos
@@ -492,10 +480,9 @@ YY_ACTION(void) yy_2_sum(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_2_sum\n"));
   {
-#line 42
+#line 41
   
-                                            printf("Creating Sub\n");
-                                            localNewExpression = newExpression(Sub, l, r);
+                                            l = newBinary(Sub, l, r);
                                         ;
   }
 #undef yythunkpos
@@ -515,8 +502,7 @@ YY_ACTION(void) yy_1_sum(yycontext *yy, char *yytext, int yyleng)
   {
 #line 38
   
-                                            printf("Creating Add\n");
-                                            localNewExpression = newExpression(Add, l, r);
+                                            l = newBinary(Add, l, r);
                                         ;
   }
 #undef yythunkpos
@@ -953,7 +939,7 @@ YY_PARSE(yycontext *) YYRELEASE(yycontext *yyctx)
 }
 
 #endif
-#line 103 "numbers_tree.leg"
+#line 89 "numbers_tree.leg"
 
 
 int main()

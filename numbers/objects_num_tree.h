@@ -6,11 +6,7 @@ typedef struct List List;
 
 enum Types {
     Root,
-    Assign,
-    Add,
-    Sub,
-    Mult,
-    Div,
+    Binary,
     Ident,
     IntLiteral,
 };
@@ -25,34 +21,19 @@ struct Expression {
     oop expression;
 };
 
-struct Assign {
+struct Binary {
     int type;
+    int binaryType;
     oop leftExpr;
     oop rightExpr;
 };
 
-struct Add {
-    int type;
-    oop leftExpr;
-    oop rightExpr;
-};
-
-struct Sub {
-    int type;
-    oop leftExpr;
-    oop rightExpr;
-};
-
-struct Mult {
-    int type;
-    oop leftExpr;
-    oop rightExpr;
-};
-
-struct Div {
-    int type;
-    oop leftExpr;
-    oop rightExpr;
+enum BinaryTypes {
+    Assign,
+    Add,
+    Sub,
+    Mult,
+    Div,
 };
 
 struct Ident {
@@ -69,11 +50,7 @@ union object {
     int type;
     struct Root Root;
     struct Expression Expression;
-    struct Assign Assign;
-    struct Add Add;
-    struct Sub Sub;
-    struct Mult Mult;
-    struct Div Div;
+    struct Binary Binary;
     struct Ident Ident;
     struct IntLiteral IntLiteral;
 };
@@ -82,11 +59,7 @@ oop newRoot();
 
 void addExpressionToRoot(oop root, oop expression);
 
-/*
- * Creates an expression with its type and fields
- * Input : (enum Types type, field1, [field2, ...])
-*/
-oop newExpression(int argc, ...);
+oop newBinary(enum BinaryTypes binaryType, oop leftExpr, oop rightExpr);
 
 oop newIdent(char value);
 oop newIntLiteral(int value);

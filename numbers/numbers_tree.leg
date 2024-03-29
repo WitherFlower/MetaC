@@ -36,10 +36,10 @@ expr    = ( e:assign                    {
         )
 
 sum     = l:prod ( PLUS r:prod          {
-                                            l = newExpression(Add, l, r);
+                                            l = newBinary(Add, l, r);
                                         }
         | MINUS r:prod                  {
-                                            l = newExpression(Sub, l, r);
+                                            l = newBinary(Sub, l, r);
                                         }
         )*                              {
                                             $$ = l;
@@ -47,11 +47,11 @@ sum     = l:prod ( PLUS r:prod          {
 
 prod    = l:num ( TIMES r:num           {
                                             printf("Creating Mult\n");
-                                            l = newExpression(Mult, l, r);
+                                            l = newBinary(Mult, l, r);
                                         }
         | DIV r:num                     {
                                             printf("Creating Div\n");
-                                            l = newExpression(Div, l, r);
+                                            l = newBinary(Div, l, r);
                                         }
         )*                              {
                                             $$ = l;
@@ -59,7 +59,7 @@ prod    = l:num ( TIMES r:num           {
         
 assign  = l:ident EQUALS r:expr -       {
                                             printf("Creating Assign\n");
-                                            $$ = newExpression(Assign, l, r);
+                                            $$ = newBinary(Assign, l, r);
                                         }
 
 ident   = < [a-z] > -                   {

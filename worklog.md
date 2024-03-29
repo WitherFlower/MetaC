@@ -4,8 +4,9 @@
         Construction de l'arbre dans la grammaire
 - [x] Print tree with tabs
 - [x] Bottom-up Evaluator
-- [ ] Create Binary/Unary/Leaf types with inner enums
-- [ ] Split the constructors into their own functions to have type checking / compile-time decisions
+- [x] Create Binary/Unary/Leaf types with inner enums
+        Only Binary was needed, not sure about Leaf for now
+- [x] Split the constructors into their own functions to have type checking / compile-time decisions
 - [ ] Integer type so that the evaluator only manipulates objects
 - [~] Describe the data structure for a grammar
         Unary *+?!&

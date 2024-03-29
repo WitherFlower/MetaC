@@ -75,11 +75,7 @@ List *newList(int size) {
 
 enum Types {
     Root,
-    Assign,
-    Add,
-    Sub,
-    Mult,
-    Div,
+    Binary,
     Ident,
     IntLiteral,
 };
@@ -89,39 +85,19 @@ struct Root {
     List *expressions;
 };
 
-struct Expression {
-    int type;    
-    oop expression;
-};
-
-struct Assign {
+struct Binary {
     int type;
+    int binaryType;
     oop leftExpr;
     oop rightExpr;
 };
 
-struct Add {
-    int type;
-    oop leftExpr;
-    oop rightExpr;
-};
-
-struct Sub {
-    int type;
-    oop leftExpr;
-    oop rightExpr;
-};
-
-struct Mult {
-    int type;
-    oop leftExpr;
-    oop rightExpr;
-};
-
-struct Div {
-    int type;
-    oop leftExpr;
-    oop rightExpr;
+enum BinaryTypes {
+    Assign,
+    Add,
+    Sub,
+    Mult,
+    Div,
 };
 
 struct Ident {
@@ -137,12 +113,7 @@ struct IntLiteral {
 union object {
     int type;
     struct Root Root;
-    struct Expression Expression;
-    struct Assign Assign;
-    struct Add Add;
-    struct Sub Sub;
-    struct Mult Mult;
-    struct Div Div;
+    struct Binary Binary;
     struct Ident Ident;
     struct IntLiteral IntLiteral;
 };
@@ -176,99 +147,12 @@ oop newRoot() {
     return root;
 }
 
-/*
- * Creates an expression with its type and fields
- * Input : (enum Types type, field1, [field2, ...])
-*/
-oop newExpression(enum Types type, ...) {
-    
-    va_list args;
-    va_start(args, type);
-    
-    switch (type) {
-        case Ident: {
-            oop expression = newObject(Ident);
-
-            char value = va_arg(args, int);
-            set(expression, Ident, value, value);
-
-            va_end(args);
-            return expression;
-        }
-        case IntLiteral: {
-            oop expression = newObject(IntLiteral);
-
-            int value = va_arg(args, int);
-            set(expression, IntLiteral, value, value);
-
-            va_end(args);
-            return expression;
-        }
-        case Assign: {
-            oop expression = newObject(Assign);
-
-            oop leftExpr = va_arg(args, oop);
-            oop rightExpr = va_arg(args, oop);
-
-            set(expression, Assign, leftExpr, leftExpr);
-            set(expression, Assign, rightExpr, rightExpr);
-
-            va_end(args);
-            return expression;
-        }
-        case Add: {
-            oop expression = newObject(Add);
-
-            oop leftExpr = va_arg(args, oop);
-            oop rightExpr = va_arg(args, oop);
-
-            set(expression, Add, leftExpr, leftExpr);
-            set(expression, Add, rightExpr, rightExpr);
-
-            va_end(args);
-            return expression;
-        }
-        case Sub: {
-            oop expression = newObject(Sub);
-
-            oop leftExpr = va_arg(args, oop);
-            oop rightExpr = va_arg(args, oop);
-
-            set(expression, Sub, leftExpr, leftExpr);
-            set(expression, Sub, rightExpr, rightExpr);
-
-            va_end(args);
-            return expression;
-        }
-        case Mult: {
-            oop expression = newObject(Mult);
-
-            oop leftExpr = va_arg(args, oop);
-            oop rightExpr = va_arg(args, oop);
-
-            set(expression, Mult, leftExpr, leftExpr);
-            set(expression, Mult, rightExpr, rightExpr);
-
-            va_end(args);
-            return expression;
-        }
-        case Div: {
-            oop expression = newObject(Div);
-
-            oop leftExpr = va_arg(args, oop);
-            oop rightExpr = va_arg(args, oop);
-
-            set(expression, Div, leftExpr, leftExpr);
-            set(expression, Div, rightExpr, rightExpr);
-
-            va_end(args);
-            return expression;
-        }
-        default: {
-            va_end(args);
-            fatal("Invalid number of members for expression type %d", type);
-        }
-    }
+oop newBinary(enum BinaryTypes binaryType, oop leftExpr, oop rightExpr) {
+    oop binary = newObject(Binary);
+    set(binary, Binary, binaryType, binaryType);
+    set(binary, Binary, leftExpr, leftExpr);
+    set(binary, Binary, rightExpr, rightExpr);
+    return binary;
 }
 
 oop newIdent(char value) {
@@ -286,54 +170,48 @@ oop newIntLiteral(int value) {
 char* getTypeString(enum Types type) {
     switch (type) {
         case Root: return "Root";
-        case Assign: return "Assign";
-        case Add: return "Add";
-        case Sub: return "Sub";
-        case Mult: return "Mult";
-        case Div: return "Div";
+        case Binary: return "Binary";
         case Ident: return "Ident";
         case IntLiteral: return "IntLiteral";
     }
 }
 
+char* getBinaryTypeString(enum BinaryTypes type) {
+    switch (type) {
+        case Assign: return "Assign";
+        case Add: return "Add";
+        case Sub: return "Sub";
+        case Mult: return "Mult";
+        case Div: return "Div";
+    }
+}
+
 void printExpression(oop expression, int depth) {
 
-    printf("%*s| %s\n", 2 * depth, "", getTypeString(expression->type));
-    
     switch (expression->type) {
-        case Assign:
-            printExpression(get(expression, Assign, leftExpr), depth + 1);
-            printExpression(get(expression, Assign, rightExpr), depth + 1);
-            break;
+        case Binary:
+            printf(
+                "%*s| %s (%s)\n",
+                2 * depth,
+                "",
+                getTypeString(expression->type),
+                getBinaryTypeString(get(expression, Binary, binaryType))
+            );
 
-        case Add:
-            printExpression(get(expression, Add, leftExpr), depth + 1);
-            printExpression(get(expression, Add, rightExpr), depth + 1);
-            break;
+            printExpression(get(expression, Binary, leftExpr), depth + 1);
+            printExpression(get(expression, Binary, rightExpr), depth + 1);
 
-        case Sub:
-            printExpression(get(expression, Sub, leftExpr), depth + 1);
-            printExpression(get(expression, Sub, rightExpr), depth + 1);
-            break;
-
-        case Mult:
-            printExpression(get(expression, Mult, leftExpr), depth + 1);
-            printExpression(get(expression, Mult, rightExpr), depth + 1);
-            break;
-
-        case Div:
-            printExpression(get(expression, Div, leftExpr), depth + 1);
-            printExpression(get(expression, Div, rightExpr), depth + 1);
             break;
 
         case Ident:
-            printf("%*s| %c\n", 2 * (depth + 1), "", get(expression, Ident, value));
+            printf("%*s| %s (%c)\n", 2 * depth, "", getTypeString(Ident), get(expression, Ident, value));
             break;
 
         case IntLiteral:
-            printf("%*s| %d\n", 2 * (depth + 1), "", get(expression, IntLiteral, value));
+            printf("%*s| %s (%d)\n", 2 * depth, "", getTypeString(IntLiteral), get(expression, IntLiteral, value));
             break;
     }
+
 }
 
 void printTree(oop root) {
@@ -346,37 +224,27 @@ void printTree(oop root) {
 int evaluateExpression(oop expression, int *variables) {
     
     switch (expression->type) {
-        case Assign: {
-            oop identExpr = get(expression, Assign, leftExpr);
-            char ident = get(identExpr, Ident, value);
-            int rightExprValue = evaluateExpression(get(expression, Assign, rightExpr), variables);
-            variables[ident - 'a'] = rightExprValue;
-            return rightExprValue;
+        case Binary: {
+                         
+            int leftValue = evaluateExpression(get(expression, Binary, leftExpr), variables);
+            int rightValue = evaluateExpression(get(expression, Binary, rightExpr), variables);
+
+            switch (get(expression, Binary, binaryType)) {
+
+                case Assign: {
+                    oop identExpr = get(expression, Binary, leftExpr);
+                    char ident = get(identExpr, Ident, value);
+                    variables[ident - 'a'] = rightValue;
+                    return rightValue;
+                }
+
+                case Add: return leftValue + rightValue;
+                case Sub: return leftValue - rightValue;
+                case Mult: return leftValue * rightValue;
+                case Div: return leftValue / rightValue;
+
+            }
         }
-
-        case Add:
-            return
-                ( evaluateExpression(get(expression, Add, leftExpr), variables)
-                + evaluateExpression(get(expression, Add, rightExpr), variables)
-                );
-
-        case Sub:
-            return
-                ( evaluateExpression(get(expression, Sub, leftExpr), variables)
-                - evaluateExpression(get(expression, Sub, rightExpr), variables)
-                );
-
-        case Mult:
-            return
-                ( evaluateExpression(get(expression, Mult, leftExpr), variables)
-                * evaluateExpression(get(expression, Mult, rightExpr), variables)
-                );
-
-        case Div:
-            return
-                ( evaluateExpression(get(expression, Div, leftExpr), variables)
-                / evaluateExpression(get(expression, Div, rightExpr), variables)
-                );
 
         case Ident:
             return variables[get(expression, Ident, value) - 'a'];
