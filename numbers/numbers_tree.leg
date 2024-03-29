@@ -1,0 +1,96 @@
+#include <stdio.h>
+
+%{
+
+#include "objects_num_tree.h"
+
+#define YYSTYPE oop
+
+oop localNewExpression;
+
+%}
+
+start   = -
+        (
+            e:expr r:root               { addExpressionToRoot(r, e); }
+            ( 
+                SC e:expr               { addExpressionToRoot(r, e); }
+            )*
+            SC?                         {
+                                            printTree(r);
+                                            printf("\nEvaluating tree :\n");
+                                            evaluateTree(r);
+                                        }
+        | !.                            { printf("EOF\n"); exit(0); }
+        | < . >                         { printf("illegal character '%s'\n", yytext); exit(1); }
+        )
+
+root    = { $$ = newRoot(); }
+
+expr    = ( e:assign                    {
+                                            $$ = e;
+                                        }
+        | e:sum                         {
+                                            $$ = e;
+                                        }
+        )
+
+sum     = l:prod ( PLUS r:prod          {
+                                            l = newExpression(Add, l, r);
+                                        }
+        | MINUS r:prod                  {
+                                            l = newExpression(Sub, l, r);
+                                        }
+        )*                              {
+                                            $$ = l;
+                                        }
+
+prod    = l:num ( TIMES r:num           {
+                                            printf("Creating Mult\n");
+                                            l = newExpression(Mult, l, r);
+                                        }
+        | DIV r:num                     {
+                                            printf("Creating Div\n");
+                                            l = newExpression(Div, l, r);
+                                        }
+        )*                              {
+                                            $$ = l;
+                                        }
+        
+assign  = l:ident EQUALS r:expr -       {
+                                            printf("Creating Assign\n");
+                                            $$ = newExpression(Assign, l, r);
+                                        }
+
+ident   = < [a-z] > -                   {
+                                            printf("Creating Ident %c\n", yytext[0]);
+                                            $$ = newIdent(yytext[0]);
+                                        }
+
+num     = ( < [0-9]+ > -                {
+                                            printf("Creating IntLiteral %d\n", atoi(yytext));
+                                            $$ = newIntLiteral(atoi(yytext));
+                                        }
+        | x:ident                       { $$ = x }
+        | LB x:expr RB                  { $$ = x }
+        )
+
+-       = [ \t\n\r]*
+
+PLUS    = '+' -
+MINUS   = '-' -
+TIMES   = '*' -
+DIV     = '/' -
+EQUALS  = '=' -
+SC      = ';' -
+LB      = '(' -
+RB      = ')' -
+
+%%
+
+int main()
+{
+    while (yyparse());
+
+    return 0;
+}

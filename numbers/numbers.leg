@@ -1,0 +1,57 @@
+%{
+
+#define YYSTYPE int
+
+int variables[26];
+
+%}
+
+start   = - ( expr (SC expr)* SC?       
+        | !.                            { printf("EOF\n"); exit(0); }
+        | < . >                         { printf("illegal character '%s'\n", yytext); exit(1); }
+        )
+
+expr    = ( e:assign                    { printf("assign expr : %d\n", e); }
+        | sum                           { printf("sum expr : %d\n", e); }
+        )
+
+sum     = x:prod ( PLUS y:prod          { x += y }
+        | MINUS y:prod                  { x -= y }
+        )*                              { $$ = x }
+
+prod    = x:num ( TIMES y:num           { x *= y }
+        | DIV y:num                     { x /= y }
+        )*                              { $$ = x }
+        
+assign  = x:ident EQUALS y:expr -       {   
+                                            variables[x] = y;
+                                            printf("%c = %d\n", x + 'a', y);
+                                            $$ = y;
+                                        }
+
+ident   = < [a-z] > -                   { $$ = yytext[0] - 'a'}
+
+num     = ( < [0-9]+ > -                { $$ = atoi(yytext) }
+        | x:ident                       { $$ = variables[x] }
+        | LB x:expr RB                  { $$ = x }
+        )
+
+-       = [ \t\n\r]*
+
+PLUS    = '+' -
+MINUS   = '-' -
+TIMES   = '*' -
+DIV     = '/' -
+EQUALS  = '=' -
+SC      = ';' -
+LB      = '(' -
+RB      = ')' -
+
+%%
+
+int main()
+{
+    while (yyparse());
+
+    return 0;
+}
