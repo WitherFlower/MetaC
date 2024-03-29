@@ -69,7 +69,7 @@ ident   = < [a-z] > -                   {
 
 num     = ( < [0-9]+ > -                {
                                             printf("Creating IntLiteral %d\n", atoi(yytext));
-                                            $$ = newIntLiteral(atoi(yytext));
+                                            $$ = newInteger(atoi(yytext));
                                         }
         | x:ident                       { $$ = x }
         | LB x:expr RB                  { $$ = x }

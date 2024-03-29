@@ -77,7 +77,7 @@ enum Types {
     Root,
     Binary,
     Ident,
-    IntLiteral,
+    Integer,
 };
 
 struct Root {
@@ -105,7 +105,7 @@ struct Ident {
     char value;
 };
 
-struct IntLiteral {
+struct Integer {
     int type;
     int value;
 };
@@ -115,7 +115,7 @@ union object {
     struct Root Root;
     struct Binary Binary;
     struct Ident Ident;
-    struct IntLiteral IntLiteral;
+    struct Integer Integer;
 };
 
 oop _newObject(enum Types type, size_t size) {
@@ -161,9 +161,9 @@ oop newIdent(char value) {
     return ident;
 }
 
-oop newIntLiteral(int value) {
-    oop intLiteral = newObject(IntLiteral);
-    set(intLiteral, IntLiteral, value, value);
+oop newInteger(int value) {
+    oop intLiteral = newObject(Integer);
+    set(intLiteral, Integer, value, value);
     return intLiteral;
 }
 
@@ -172,7 +172,7 @@ char* getTypeString(enum Types type) {
         case Root: return "Root";
         case Binary: return "Binary";
         case Ident: return "Ident";
-        case IntLiteral: return "IntLiteral";
+        case Integer: return "Integer";
     }
 }
 
@@ -207,8 +207,8 @@ void printExpression(oop expression, int depth) {
             printf("%*s| %s (%c)\n", 2 * depth, "", getTypeString(Ident), get(expression, Ident, value));
             break;
 
-        case IntLiteral:
-            printf("%*s| %s (%d)\n", 2 * depth, "", getTypeString(IntLiteral), get(expression, IntLiteral, value));
+        case Integer:
+            printf("%*s| %s (%d)\n", 2 * depth, "", getTypeString(Integer), get(expression, Integer, value));
             break;
     }
 
@@ -221,13 +221,14 @@ void printTree(oop root) {
     }
 }
 
-int evaluateExpression(oop expression, int *variables) {
+oop evaluateExpression(oop expression, oop *variables) {
     
     switch (expression->type) {
         case Binary: {
                          
-            int leftValue = evaluateExpression(get(expression, Binary, leftExpr), variables);
-            int rightValue = evaluateExpression(get(expression, Binary, rightExpr), variables);
+            oop leftValue = evaluateExpression(get(expression, Binary, leftExpr), variables);
+            oop rightValue = evaluateExpression(get(expression, Binary, rightExpr), variables);
+            oop newValue;
 
             switch (get(expression, Binary, binaryType)) {
 
@@ -238,10 +239,22 @@ int evaluateExpression(oop expression, int *variables) {
                     return rightValue;
                 }
 
-                case Add: return leftValue + rightValue;
-                case Sub: return leftValue - rightValue;
-                case Mult: return leftValue * rightValue;
-                case Div: return leftValue / rightValue;
+                case Add:
+                    newValue = newObject(Integer);
+                    set(newValue, Integer, value, get(leftValue, Integer, value) + get(rightValue, Integer, value));
+                    return newValue;
+                case Sub:
+                    newValue = newObject(Integer);
+                    set(newValue, Integer, value, get(leftValue, Integer, value) - get(rightValue, Integer, value));
+                    return newValue;
+                case Mult:
+                    newValue = newObject(Integer);
+                    set(newValue, Integer, value, get(leftValue, Integer, value) * get(rightValue, Integer, value));
+                    return newValue;
+                case Div:
+                    newValue = newObject(Integer);
+                    set(newValue, Integer, value, get(leftValue, Integer, value) / get(rightValue, Integer, value));
+                    return newValue;
 
             }
         }
@@ -249,8 +262,8 @@ int evaluateExpression(oop expression, int *variables) {
         case Ident:
             return variables[get(expression, Ident, value) - 'a'];
 
-        case IntLiteral:
-            return get(expression, IntLiteral, value);
+        case Integer:
+            return expression;
 
         default: fatal("Tried to evaluate invalid type %s\n", getTypeString(expression->type));
     }
@@ -258,10 +271,10 @@ int evaluateExpression(oop expression, int *variables) {
 
 void evaluateTree(oop root) {
     List *expressions = get(root, Root, expressions);
-    int variables[26];
+    oop variables[26];
 
     for (int i = 0; i < expressions->used; i++) {
-        int expressionValue = evaluateExpression(expressions->data[i], variables);
+        int expressionValue = get(evaluateExpression(expressions->data[i], variables), Integer, value);
         printf("Expression #%d evaluated to %d\n", i, expressionValue);
     }
 }
@@ -273,14 +286,14 @@ void testList() {
     List *list = newList(10); 
 
     for (int i = 0; i < 20; i++) {
-        oop newInteger = newObject(IntLiteral);
-        set(newInteger, IntLiteral, value, i);
+        oop newInteger = newObject(Integer);
+        set(newInteger, Integer, value, i);
 
         list = push(list, newInteger);
     }
 
     for (int i = 0; i < list->used; i++) {
-        printf("%d ", get(list->data[i], IntLiteral, value));
+        printf("%d ", get(list->data[i], Integer, value));
     }
 
     printf("\n");

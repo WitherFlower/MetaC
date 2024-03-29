@@ -62,7 +62,7 @@ void addExpressionToRoot(oop root, oop expression);
 oop newBinary(enum BinaryTypes binaryType, oop leftExpr, oop rightExpr);
 
 oop newIdent(char value);
-oop newIntLiteral(int value);
+oop newInteger(int value);
 
 char* getTypeString(enum Types type);
 

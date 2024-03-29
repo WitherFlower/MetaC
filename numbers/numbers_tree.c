@@ -343,7 +343,7 @@ YY_ACTION(void) yy_1_num(yycontext *yy, char *yytext, int yyleng)
 #line 70
   
                                             printf("Creating IntLiteral %d\n", atoi(yytext));
-                                            __ = newIntLiteral(atoi(yytext));
+                                            __ = newInteger(atoi(yytext));
                                         ;
   }
 #undef yythunkpos
