@@ -6,8 +6,6 @@
 
 #define YYSTYPE oop
 
-oop localNewExpression;
-
 %}
 
 start   = -
