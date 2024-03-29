@@ -103,6 +103,8 @@ struct Expression {
     List *sequences;
 };
 
+struct 
+
 union object {
     int type;
     struct Grammar Grammar;
