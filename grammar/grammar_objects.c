@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -75,21 +76,25 @@ List *newList(int size) {
 
 enum Types {
     Grammar,
-    Declaration,
-    Assignment,
     Binary,
     Unary,
-    Leaf,
+    Dot,
+    String,
+    CharacterClass,
+    Action,
+    Identifier,
 };
 
 char *getTypeString(enum Types type) {
     switch (type) {
         case Grammar: return "Grammar";
-        case Declaration: return "Declaration";
-        case Assignment: return "Assignment";
         case Binary: return "Binary";
         case Unary: return "Unary";
-        case Leaf: return "Leaf";
+        case Dot: return "Dot";
+        case String: return "String";
+        case CharacterClass: return "CharacterClass";
+        case Action: return "Action";
+        case Identifier: return "Identifier";
     }
 }
 
@@ -98,21 +103,9 @@ struct Grammar {
     List *definitions;
 };
 
-struct Declaration {
-    int type;
-    oop indentifier;
-    oop expression;
-};
-
-struct Assignment {
-    int type;
-    oop variable;
-    oop rule;
-};
-
 struct Binary {
     int type;
-    int operator;
+    int op;
     oop leftExpression;
     oop rightExpression;
 };
@@ -120,11 +113,22 @@ struct Binary {
 enum BinaryOperators {
     Sequence,
     Alternation,
+    Definition,
+    Assignment,
 };
+
+char *getBinaryOpString(enum BinaryOperators op) {
+    switch (op) {
+        case Sequence: return "Sequence";
+        case Alternation: return "Alternation";
+        case Definition: return "Definition";
+        case Assignment: return "Assignment";
+    }
+}
 
 struct Unary {
     int type;
-    int operator;
+    int op;
     oop expression;
 };
 
@@ -136,28 +140,50 @@ enum UnaryOperators {
     Not,
 };
 
-struct Leaf {
+char *getUnaryOpString(enum UnaryOperators op) {
+    switch (op) {
+        case Star: return "Star";
+        case Plus: return "Plus";
+        case Optional: return "Optional";
+        case And: return "And";
+        case Not: return "Not";
+    }
+}
+
+struct Dot {
     int type;
-    int leafType;
-    oop expression;
 };
 
-enum LeafTypes {
-    Dot,
-    String,
-    CharacterClass,
-    Action,
-    RuleIdentifier,
+struct String {
+    int type;
+    char *value;
+};
+
+struct CharacterClass {
+    int type;
+    char *value;
+};
+
+struct Action {
+    int type;
+    char *value;
+};
+
+struct Identifier {
+    int type;
+    char *value;
 };
 
 union Object {
     int type;
     struct Grammar Grammar;
-    struct Declaration Declaration;
-    struct Assignment Assignment;
     struct Binary Binary;
     struct Unary Unary;
-    struct Leaf Leaf;
+    struct Dot Dot;
+    struct String String;
+    struct CharacterClass CharacterClass;
+    struct Action Action;
+    struct Identifier Identifier;
 };
 
 oop _newObject(enum Types type, size_t size) {
@@ -175,3 +201,138 @@ oop _checkType(oop object, enum Types type, char *file, int lineNumber) {
 #define newObject(TYPE) _newObject(TYPE, sizeof (struct TYPE))
 #define get(VAL, TYPE, FIELD) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD
 #define set(VAL, TYPE, FIELD, NEW_FIELD_VALUE) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD=NEW_FIELD_VALUE
+
+oop newGrammar() {
+    oop grammar = newObject(Grammar);
+    set(grammar, Grammar, definitions, newList(10));
+    return grammar;
+
+}
+
+void addRuleDefinitionToGrammar(oop grammar, oop definition) {
+    printf("Adding Rule to grammar\n");
+    List *rootExpressions = get(grammar, Grammar, definitions);
+    set(grammar, Grammar, definitions, push(rootExpressions, definition));
+}
+
+oop newBinary(enum BinaryOperators op, oop leftExpression, oop rightExpression) {
+    oop binary = newObject(Binary);
+    set(binary, Binary, op, op);
+    set(binary, Binary, leftExpression, leftExpression);
+    set(binary, Binary, rightExpression, rightExpression);
+    return binary;
+}
+
+oop newUnary(enum UnaryOperators op, oop expression) {
+    oop unary = newObject(Unary);
+    set(unary, Unary, op, op);
+    set(unary, Unary, expression, expression);
+    return unary;
+}
+
+oop newDot() {
+    return newObject(Dot);
+}
+
+oop newString(char *value) {
+    int length = strlen(value) + 1;
+    char *newValue = malloc(sizeof(char) * length);
+    strcpy(newValue, value);
+
+    oop string = newObject(String);
+    set(string, String, value, newValue);
+    return string;
+}
+
+oop newCharacterClass(char *value) {
+    int length = strlen(value) + 1;
+    char *newValue = malloc(sizeof(char) * length);
+    strcpy(newValue, value);
+
+    oop characterClass = newObject(CharacterClass);
+    set(characterClass, CharacterClass, value, newValue);
+    return characterClass;
+}
+
+oop newAction(char *value) {
+    int length = strlen(value) + 1;
+    char *newValue = malloc(sizeof(char) * length);
+    strcpy(newValue, value);
+
+    oop action = newObject(Action);
+    set(action, Action, value, newValue);
+    return action;
+}
+
+oop newIdentifier(char *value) {
+    int length = strlen(value) + 1;
+    char *newValue = malloc(sizeof(char) * length);
+    strcpy(newValue, value);
+
+    oop identifier = newObject(Identifier);
+    set(identifier, Identifier, value, newValue);
+    return identifier;
+}
+
+// Print stuff
+
+void printExpression(oop expression, int depth) {
+    switch (expression->type) {
+        case Binary:
+            printf(
+                "%*s| %s (%s)\n",
+                2 * depth,
+                "",
+                getTypeString(expression->type),
+                getBinaryOpString(get(expression, Binary, op))
+            );
+
+            printExpression(get(expression, Binary, leftExpression), depth + 1);
+            printExpression(get(expression, Binary, rightExpression), depth + 1);
+
+            break;
+
+        case Unary:
+            printf(
+                "%*s| %s (%s)\n",
+                2 * depth,
+                "",
+                getTypeString(expression->type),
+                getUnaryOpString(get(expression, Unary, op))
+            );
+
+            printExpression(get(expression, Unary, expression), depth + 1);
+
+            break;
+
+        case Dot:
+            printf("%*s| %s\n", 2 * depth, "", getTypeString(Dot));
+            break;
+
+        case String:
+            printf("%*s| %s (%s)\n", 2 * depth, "", getTypeString(String), get(expression, String, value));
+            break;
+
+        case CharacterClass:
+            printf("%*s| %s (%s)\n", 2 * depth, "", getTypeString(CharacterClass), get(expression, CharacterClass, value));
+            break;
+
+        case Action:
+            printf("%*s| %s (%s)\n", 2 * depth, "", getTypeString(Action), get(expression, Action, value));
+            break;
+
+        case Identifier:
+            printf("%*s| %s (%s)\n", 2 * depth, "", getTypeString(Identifier), get(expression, Identifier, value));
+            break;
+    }
+}
+
+void printTree(oop grammar) {
+    List *definitions = get(grammar, Grammar, definitions);
+    for (int i = 0; i < definitions->used; i++) {
+        printExpression(definitions->data[i], 0);
+    }
+}
+
+
+

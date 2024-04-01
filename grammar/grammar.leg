@@ -1,41 +1,70 @@
-grammar =       -
-               ( declaration | definition )+
+%{
+
+#include <stdio.h>
+#include <string.h>
+
+#include "grammar_objects.h"
+
+#define YYSTYPE oop
+
+%}
+
+grammar =       - r:root
+               ( declaration | d:definition { addRuleDefinitionToGrammar(r, d); } )+
                trailer? end-of-file
+               { printTree(r); }
+
+root = { $$ = newGrammar(); }
 
 declaration =   '%{' < ( !'%}' . )* > RPERCENT
 
 trailer =       '%%' < .* >
 
-definition =    identifier EQUAL expression SEMICOLON?
+definition =    i:identifier EQUAL e:expression SEMICOLON?      { $$ = newBinary(Definition, i, e); }
 
-### Ordering problem when making a list ?
-expression =    sequence ( BAR sequence )*
+expression =    s1:sequence (
+                    BAR s2:sequence                             { s1 = newBinary(Alternation, s1, s2); } 
+                )*                                              { $$ = s1; }
 
-sequence =      error+
+# Was error+ before, rewritten for reasons
+sequence =      e:error (
+                    f:error                                     { e = newBinary(Sequence, e, f); }
+                )*                                              { $$ = e; }
 
-error =         prefix ( TILDE action )?
+error =         p:prefix ( TILDE action )?                      { $$ = p; }
 
 prefix =        AND action
-|               ( AND | NOT )? suffix
+                |
+                ( a:AND                                         
+                | n:NOT                                         
+                )? s:suffix                                     {
+                                                                    if (a)      { $$ = newUnary(And, s); }
+                                                                    else if (n) { $$ = newUnary(Not, s); }
+                                                                    else        { $$ = s; }
+                                                                }
 
-suffix =        primary ( QUERY | STAR | PLUS )?
+suffix =        p:primary
+                ( QUERY                                         { p = newUnary(Optional, p); }
+                | STAR                                          { p = newUnary(Star, p); }
+                | PLUS                                          { p = newUnary(Plus, p); }
+                )?                                              { $$ = p; }
 
-primary =       identifier COLON identifier !EQUAL
-|               identifier !EQUAL
-|               OPEN expression CLOSE
-|               literal
-|               class
-|               DOT
-|               action
+primary =       i1:identifier COLON i2:identifier !EQUAL        { $$ = newBinary(Assignment, i1, i2) }
+|               i:identifier !EQUAL                             { $$ = i; }
+|               OPEN e:expression CLOSE                         { $$ = e; }
+|               l:literal                                       { $$ = l; }
+|               c:class                                         { $$ = c; }
+|               DOT                                             { $$ = newDot(); }
+|               a:action                                        { $$ = a; }
 |               BEGIN
 |               END
 
-identifier =    < [-a-zA-Z_][-a-zA-Z_0-9]* > -
+identifier =    < [-a-zA-Z_][-a-zA-Z_0-9]* > -                  { $$ = newIdentifier(yytext); }
 
-literal =       ['] < ( !['] char )* > ['] -
+literal =       ['] < ( !['] char )* > ['] -                    { $$ = newString(yytext); }
 |               ["] < ( !["] char )* > ["] -
 
-class =         '[' < ( !']' range )* > ']' -
+class =         '[' < ( !']' range )* > ']' -                   { $$ = newCharacterClass(yytext); }
 
 range =         char '-' char | char
 
@@ -44,7 +73,7 @@ char =          '\\' [abefnrtv'"\[\]\\]
 |               '\\' [0-7][0-7]?
 |               !'\\' .
 
-action =        '{' < braces* > '}' -
+action =        '{' < braces* > '}' -                           { $$ = newAction(yytext); }
 
 braces =        '{' braces* '}'
 |               !'}' .
@@ -80,3 +109,4 @@ int main()
 
     return 0;
 }
+

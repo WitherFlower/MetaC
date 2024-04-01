@@ -11,8 +11,6 @@
 
 #define YYSTYPE oop
 
-oop localNewExpression;
-
 
 #ifndef YY_MALLOC
 #define YY_MALLOC(C, N)		malloc(N)
@@ -308,7 +306,7 @@ YY_ACTION(void) yy_3_num(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_3_num\n"));
   {
-#line 75
+#line 73
    __ = x ;
   }
 #undef yythunkpos
@@ -324,7 +322,7 @@ YY_ACTION(void) yy_2_num(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_2_num\n"));
   {
-#line 74
+#line 72
    __ = x ;
   }
 #undef yythunkpos
@@ -340,7 +338,7 @@ YY_ACTION(void) yy_1_num(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_num\n"));
   {
-#line 70
+#line 68
   
                                             printf("Creating IntLiteral %d\n", atoi(yytext));
                                             __ = newInteger(atoi(yytext));
@@ -358,7 +356,7 @@ YY_ACTION(void) yy_1_ident(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ident\n"));
   {
-#line 65
+#line 63
   
                                             printf("Creating Ident %c\n", yytext[0]);
                                             __ = newIdent(yytext[0]);
@@ -377,7 +375,7 @@ YY_ACTION(void) yy_1_assign(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_assign\n"));
   {
-#line 60
+#line 58
   
                                             printf("Creating Assign\n");
                                             __ = newBinary(Assign, l, r);
@@ -398,7 +396,7 @@ YY_ACTION(void) yy_3_prod(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_3_prod\n"));
   {
-#line 56
+#line 54
   
                                             __ = l;
                                         ;
@@ -418,7 +416,7 @@ YY_ACTION(void) yy_2_prod(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_2_prod\n"));
   {
-#line 52
+#line 50
   
                                             printf("Creating Div\n");
                                             l = newBinary(Div, l, r);
@@ -439,7 +437,7 @@ YY_ACTION(void) yy_1_prod(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_prod\n"));
   {
-#line 48
+#line 46
   
                                             printf("Creating Mult\n");
                                             l = newBinary(Mult, l, r);
@@ -460,7 +458,7 @@ YY_ACTION(void) yy_3_sum(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_3_sum\n"));
   {
-#line 44
+#line 42
   
                                             __ = l;
                                         ;
@@ -480,7 +478,7 @@ YY_ACTION(void) yy_2_sum(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_2_sum\n"));
   {
-#line 41
+#line 39
   
                                             l = newBinary(Sub, l, r);
                                         ;
@@ -500,7 +498,7 @@ YY_ACTION(void) yy_1_sum(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_sum\n"));
   {
-#line 38
+#line 36
   
                                             l = newBinary(Add, l, r);
                                         ;
@@ -519,7 +517,7 @@ YY_ACTION(void) yy_2_expr(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_2_expr\n"));
   {
-#line 33
+#line 31
   
                                             __ = e;
                                         ;
@@ -537,7 +535,7 @@ YY_ACTION(void) yy_1_expr(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_expr\n"));
   {
-#line 30
+#line 28
   
                                             __ = e;
                                         ;
@@ -554,7 +552,7 @@ YY_ACTION(void) yy_1_root(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_root\n"));
   {
-#line 28
+#line 26
    __ = newRoot(); ;
   }
 #undef yythunkpos
@@ -570,7 +568,7 @@ YY_ACTION(void) yy_5_start(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_5_start\n"));
   {
-#line 25
+#line 23
    printf("illegal character '%s'\n", yytext); exit(1); ;
   }
 #undef yythunkpos
@@ -588,7 +586,7 @@ YY_ACTION(void) yy_4_start(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_4_start\n"));
   {
-#line 24
+#line 22
    printf("EOF\n"); exit(0); ;
   }
 #undef yythunkpos
@@ -606,7 +604,7 @@ YY_ACTION(void) yy_3_start(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_3_start\n"));
   {
-#line 19
+#line 17
   
                                             printTree(r);
                                             printf("\nEvaluating tree :\n");
@@ -628,7 +626,7 @@ YY_ACTION(void) yy_2_start(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_2_start\n"));
   {
-#line 17
+#line 15
    addExpressionToRoot(r, e); ;
   }
 #undef yythunkpos
@@ -646,7 +644,7 @@ YY_ACTION(void) yy_1_start(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_start\n"));
   {
-#line 15
+#line 13
    addExpressionToRoot(r, e); ;
   }
 #undef yythunkpos
@@ -939,7 +937,7 @@ YY_PARSE(yycontext *) YYRELEASE(yycontext *yyctx)
 }
 
 #endif
-#line 89 "numbers_tree.leg"
+#line 87 "numbers_tree.leg"
 
 
 int main()
