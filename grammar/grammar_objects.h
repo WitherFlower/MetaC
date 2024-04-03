@@ -3,7 +3,6 @@ union Object;
 
 typedef union Object *oop;
 
-
 enum BinaryOperators {
     Sequence,
     Alternation,
@@ -29,6 +28,10 @@ oop newUnary(enum UnaryOperators op, oop expression);
 
 oop newDot();
 
+oop newBegin();
+
+oop newEnd();
+
 oop newString(char *value);
 
 oop newCharacterClass(char *value);
@@ -37,4 +40,9 @@ oop newAction(char *value);
 
 oop newIdentifier(char *value);
 
+oop newInteger(int value);
+
 void printTree(oop grammar);
+
+void writeTree(oop grammar);
+

@@ -12,7 +12,7 @@
 grammar =       - r:root
                ( declaration | d:definition { addRuleDefinitionToGrammar(r, d); } )+
                trailer? end-of-file
-               { printTree(r); }
+               { printTree(r); writeTree(r); }
 
 root = { $$ = newGrammar(); }
 
@@ -35,13 +35,20 @@ error =         p:prefix ( TILDE action )?                      { $$ = p; }
 
 prefix =        AND action
                 |
-                ( a:AND                                         
-                | n:NOT                                         
-                )? s:suffix                                     {
-                                                                    if (a)      { $$ = newUnary(And, s); }
-                                                                    else if (n) { $$ = newUnary(Not, s); }
-                                                                    else        { $$ = s; }
-                                                                }
+                ( AND s:suffix                                  { $$ = newUnary(And, s); }
+                | NOT s:suffix                                  { $$ = newUnary(Not, s); }
+                | s:suffix                                      { $$ = s; }
+                )
+#                | ip:initPrefix
+#                ( AND                                           { ip = '&'; }
+#                | NOT                                           { ip = '!'; }
+#                )? s:suffix                                     {
+#                                                                    if (ip == '&')     { $$ = newUnary(And, s); }
+#                                                                    if (ip == '!')     { $$ = newUnary(Not, s); }
+#                                                                    else                    { $$ = s; }
+#                                                                }
+
+#initPrefix = { $$ = 0; }
 
 suffix =        p:primary
                 ( QUERY                                         { p = newUnary(Optional, p); }
@@ -56,8 +63,8 @@ primary =       i1:identifier COLON i2:identifier !EQUAL        { $$ = newBinary
 |               c:class                                         { $$ = c; }
 |               DOT                                             { $$ = newDot(); }
 |               a:action                                        { $$ = a; }
-|               BEGIN
-|               END
+|               BEGIN                                           { $$ = newBegin(); }
+|               END                                             { $$ = newEnd(); }
 
 identifier =    < [-a-zA-Z_][-a-zA-Z_0-9]* > -                  { $$ = newIdentifier(yytext); }
 

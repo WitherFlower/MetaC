@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 void fatal(char *format, ...) {
     va_list ap;
@@ -79,6 +80,8 @@ enum Types {
     Binary,
     Unary,
     Dot,
+    Begin,
+    End,
     String,
     CharacterClass,
     Action,
@@ -91,6 +94,8 @@ char *getTypeString(enum Types type) {
         case Binary: return "Binary";
         case Unary: return "Unary";
         case Dot: return "Dot";
+        case Begin: return "Begin";
+        case End: return "End";
         case String: return "String";
         case CharacterClass: return "CharacterClass";
         case Action: return "Action";
@@ -154,6 +159,14 @@ struct Dot {
     int type;
 };
 
+struct Begin {
+    int type;
+};
+
+struct End {
+    int type;
+};
+
 struct String {
     int type;
     char *value;
@@ -180,6 +193,8 @@ union Object {
     struct Binary Binary;
     struct Unary Unary;
     struct Dot Dot;
+    struct Begin Begin;
+    struct End End;
     struct String String;
     struct CharacterClass CharacterClass;
     struct Action Action;
@@ -232,6 +247,14 @@ oop newUnary(enum UnaryOperators op, oop expression) {
 
 oop newDot() {
     return newObject(Dot);
+}
+
+oop newBegin() {
+    return newObject(Begin);
+}
+
+oop newEnd() {
+    return newObject(End);
 }
 
 oop newString(char *value) {
@@ -309,6 +332,14 @@ void printExpression(oop expression, int depth) {
             printf("%*s| %s\n", 2 * depth, "", getTypeString(Dot));
             break;
 
+        case Begin:
+            printf("%*s| %s\n", 2 * depth, "", getTypeString(Begin));
+            break;
+
+        case End:
+            printf("%*s| %s\n", 2 * depth, "", getTypeString(End));
+            break;
+
         case String:
             printf("%*s| %s (%s)\n", 2 * depth, "", getTypeString(String), get(expression, String, value));
             break;
@@ -334,5 +365,211 @@ void printTree(oop grammar) {
     }
 }
 
+char *convertSpecialChars(char *sourceString) {
+    char *convertedString = malloc(sizeof(char) * strlen(sourceString));
+    convertedString[0] = 0;
+
+    for (int i = 0; i < strlen(sourceString); i++) {
+        
+        char current = sourceString[i];
+
+        switch (current) {
+
+            case '\'': { char currentString[] = { '\\', '\'', '\0' }; strcat(convertedString, currentString); break; }
+            case '\"': { char currentString[] = { '\\', '\"', '\0' }; strcat(convertedString, currentString); break; }
+            case '\\': { char currentString[] = { '\\', '\\', '\0' }; strcat(convertedString, currentString); break; }
+            case '\r': { char currentString[] = { '\\', 'r', '\0' }; strcat(convertedString, currentString); break; }
+            case '\t': { char currentString[] = { '\\', 't', '\0' }; strcat(convertedString, currentString); break; }
+            case '\n': { char currentString[] = { '\\', 'n', '\0' }; strcat(convertedString, currentString); break; }
+            default:   { char currentString[] = { current, '\0' }; strcat(convertedString, currentString); break; }
+        
+        }
+
+    }
+
+    return convertedString;
+}
+
+/*
+ * Writes the necessary C code to a file to create the expression,
+ * and returns the name give to the instantiated variable.
+ *
+ * @param fptr The file to write to.
+ * @param expression The expression to write.
+ */
+char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
+    switch (expression->type) {
+        case Binary: {
+
+            char *leftExpressionVarName = writeExpression(fptr, get(expression, Binary, leftExpression), declarationCount);
+            char *rightExpressionVarName = writeExpression(fptr, get(expression, Binary, rightExpression), declarationCount);
+            
+            enum BinaryOperators op = get(expression, Binary, op);
+            char *variableName = getBinaryOpString(op);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            // Do I need to free variableName after this ???
+
+            char *operatorName = getBinaryOpString(op);
+            fprintf(fptr, "\toop %s = newBinary(%s, %s, %s);\n", 
+                    fullVariableName, operatorName, leftExpressionVarName, rightExpressionVarName);
 
 
+            return fullVariableName;
+        }
+        case Unary: {
+            
+            char *expressionVarName = writeExpression(fptr, get(expression, Unary, expression), declarationCount);
+
+            enum UnaryOperators op = get(expression, Unary, op);
+            char *variableName = getUnaryOpString(op);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            char *operatorName = getUnaryOpString(op);
+            fprintf(fptr, "\toop %s = newUnary(%s, %s);\n", fullVariableName, operatorName, expressionVarName);
+
+            return fullVariableName;
+        }
+        case Dot: {
+            
+            char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            fprintf(fptr, "\toop %s = newDot();\n", fullVariableName);
+
+            return fullVariableName;
+        }
+
+        case Begin: {
+
+            char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            fprintf(fptr, "\toop %s = newBegin();\n", fullVariableName);
+
+            return fullVariableName;
+        }
+
+        case End: {
+
+            char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            fprintf(fptr, "\toop %s = newEnd();\n", fullVariableName);
+
+            return fullVariableName;
+        }
+
+        case String: {
+
+            char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            char *value = get(expression, String, value);
+
+            char *convertedValue = convertSpecialChars(value);
+            fprintf(fptr, "\toop %s = newString(\"%s\");\n", fullVariableName, convertedValue);
+            free(convertedValue);
+
+            return fullVariableName;
+        }
+
+        case CharacterClass: {
+
+            char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            char *value = get(expression, CharacterClass, value);
+
+            char *convertedValue = convertSpecialChars(value);
+            fprintf(fptr, "\toop %s = newCharacterClass(\"%s\");\n", fullVariableName, convertedValue);
+            free(convertedValue);
+
+            return fullVariableName;
+        }
+
+        case Action: {
+
+            char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            char *value = get(expression, Action, value);
+
+            char *convertedValue = convertSpecialChars(value);
+            fprintf(fptr, "\toop %s = newAction(\"%s\");\n", fullVariableName, convertedValue);
+            free(convertedValue);
+
+            return fullVariableName;
+        }
+
+        case Identifier: {
+
+            char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            char *value = get(expression, Identifier, value);
+
+            char *convertedValue = convertSpecialChars(value);
+            fprintf(fptr, "\toop %s = newIdentifier(\"%s\");\n", fullVariableName, convertedValue);
+            free(convertedValue);
+
+            return fullVariableName;
+        }
+        default: fatal("shit hit the fan in write tree"); return "";
+    }
+}
+
+void writeTree(oop grammar) {
+    FILE *fptr = fopen("grammar_tree_out.c", "w");
+
+    fprintf(fptr, "#include \"grammar_objects.h\"\n\noop getGrammar() {\n");
+    fprintf(fptr, "\toop grammar = newGrammar();\n");
+
+    List *definitions = get(grammar, Grammar, definitions);
+    int expressionCount = 0;
+
+    for (int i = 0; i < definitions->used; i++) {
+        char *varName = writeExpression(fptr, definitions->data[i], &expressionCount);
+        fprintf(fptr, "\taddRuleDefinitionToGrammar(grammar, %s);\n\n", varName);
+    }
+
+    fprintf(fptr, "\treturn grammar;\n}\n");
+
+    fclose(fptr);
+}

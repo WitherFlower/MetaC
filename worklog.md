@@ -1,8 +1,10 @@
-# 2024-04-01
+# 2024-04-03
 
-- [x] Switch to Neovim
-- [x] Build the tree for grammar representation
-- [x] Print the tree
+- [x] Fix prefix unaries
+
+- [ ] Figure out how to evaluate the tree
+    - What should we get as a result of execution ?
+        grammar g ---> eval G-Tree ---> ???
 
 Questions : 
 
@@ -13,6 +15,19 @@ better names for the unary operators ?
 shouldn't assignment and declaration be binary operators ?
 why represent a sequence as a binary ?
 order of sequence problem ?
+grammar_objects.c:391 : freeing thing question
+
+# 2024-04-02
+
+- [x] Write out TGG in the form of C data declarations
+    (structs, unions, arrays, pointer variables, functions for the actions, etc.)
+    In such a way that the C compiler will turn them back into the identical tree.
+
+# 2024-04-01
+
+- [x] Switch to Neovim
+- [x] Build the tree for grammar representation
+- [x] Print the tree
 
 # 2024-03-29
 
