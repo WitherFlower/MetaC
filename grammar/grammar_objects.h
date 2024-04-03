@@ -1,3 +1,5 @@
+#ifndef GRAMMAR_OBJECTS_H
+#define GRAMMAR_OBJECTS_H
 
 union Object;
 
@@ -45,4 +47,6 @@ oop newInteger(int value);
 void printTree(oop grammar);
 
 void writeTree(oop grammar);
+
+#endif
 

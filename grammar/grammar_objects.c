@@ -556,7 +556,7 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
 }
 
 void writeTree(oop grammar) {
-    FILE *fptr = fopen("grammar_tree_out.c", "w");
+    FILE *fptr = fopen("grammar_get_tree.c", "w");
 
     fprintf(fptr, "#include \"grammar_objects.h\"\n\noop getGrammar() {\n");
     fprintf(fptr, "\toop grammar = newGrammar();\n");
