@@ -3,7 +3,7 @@
 - [x] Extended List type to support binary search and insertion by pointer value
         With tests !!!
 - [x] Symbol list
-- [ ] Stop using identifiers for declaration and assignment
+- [ ] Stop using identifiers for definition and assignment
 - [ ] Rewrite file generation to use static data structures
 - [ ] Tree Evaluation
         - [ ] Symbol table thing to store TGG rules in order and know what to apply

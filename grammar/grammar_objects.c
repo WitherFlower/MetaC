@@ -23,6 +23,8 @@ typedef union Object *oop;
 
 enum Types {
     Grammar,
+    Definition,
+    Assignment,
     Binary,
     Unary,
     Dot,
@@ -38,6 +40,8 @@ enum Types {
 char *getTypeString(enum Types type) {
     switch (type) {
         case Grammar: return "Grammar";
+        case Definition: return "Definition";
+        case Assignment: return "Assignment";
         case Binary: return "Binary";
         case Unary: return "Unary";
         case Dot: return "Dot";
@@ -56,6 +60,18 @@ struct Grammar {
     List *definitions;
 };
 
+struct Definition {
+    int type;
+    oop name;
+    oop rule;
+};
+
+struct Assignment {
+    int type;
+    oop variableName;
+    oop ruleIdentifier;
+};
+
 struct Binary {
     int type;
     int op;
@@ -67,8 +83,6 @@ const char *getBinaryOpString(enum BinaryOperators op) {
     switch (op) {
         case Sequence: return "Sequence";
         case Alternation: return "Alternation";
-        case Definition: return "Definition";
-        case Assignment: return "Assignment";
     }
 }
 
@@ -128,6 +142,8 @@ struct Symbol {
 union Object {
     int type;
     struct Grammar Grammar;
+    struct Definition Definition;
+    struct Assignment Assignment;
     struct Binary Binary;
     struct Unary Unary;
     struct Dot Dot;
@@ -156,19 +172,32 @@ oop _checkType(oop object, enum Types type, char *file, int lineNumber) {
 #define get(VAL, TYPE, FIELD) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD
 #define set(VAL, TYPE, FIELD, NEW_FIELD_VALUE) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD=NEW_FIELD_VALUE
 
-oop toSymbol(List *symbols, char *string) {
-    
-}
-
 oop newGrammar() {
     oop grammar = newObject(Grammar);
     set(grammar, Grammar, definitions, newList(10));
     return grammar;
+}
 
+oop newDefinition(oop name, oop rule) {
+
+    oop definition = newObject(Definition);
+    set(definition, Definition, name, name);
+    set(definition, Definition, rule, rule);
+
+    return definition;
+}
+
+oop newAssignment(oop variableName, oop ruleIdentifier) {
+
+    oop assignment = newObject(Assignment);
+    set(assignment, Assignment, variableName, variableName);
+    set(assignment, Assignment, ruleIdentifier, ruleIdentifier);
+
+    return assignment;
 }
 
 void addRuleDefinitionToGrammar(oop grammar, oop definition) {
-    printf("Adding Rule to grammar\n");
+    // printf("Adding Rule to grammar\n");
     List *rootExpressions = get(grammar, Grammar, definitions);
     set(grammar, Grammar, definitions, push(rootExpressions, definition));
 }
@@ -277,6 +306,18 @@ int objectEquals(oop obj, oop other) {
 
 void printExpression(oop expression, int depth) {
     switch (expression->type) {
+        case Definition:
+            printf("%*s| %s (%s)\n", 2 * depth, "", getTypeString(Definition),
+                    get(get(expression, Definition, name), String, value));
+            printExpression(get(expression, Definition, rule), depth + 1);
+            break;
+
+        case Assignment:
+            printf("%*s| %s (%s)\n", 2 * depth, "", getTypeString(Assignment),
+                    get(get(expression, Assignment, variableName), String, value));
+            printExpression(get(expression, Assignment, ruleIdentifier), depth + 1);
+            break;
+
         case Binary:
             printf(
                 "%*s| %s (%s)\n",

@@ -8,8 +8,6 @@ typedef union Object *oop;
 enum BinaryOperators {
     Sequence,
     Alternation,
-    Definition,
-    Assignment,
 };
 
 enum UnaryOperators {
@@ -23,6 +21,10 @@ enum UnaryOperators {
 oop newGrammar();
 
 void addRuleDefinitionToGrammar(oop grammar, oop definition);
+
+oop newDefinition(oop name, oop rule);
+
+oop newAssignment(oop variableName, oop ruleIdentifier);
 
 oop newBinary(enum BinaryOperators op, oop leftExpression, oop rightExpression);
 
