@@ -4,13 +4,6 @@
 #ifndef LIST_H
 #define LIST_H
 
-typedef struct 
-{
-    size_t size;
-    size_t used; 
-    oop data[];
-} List;
-
 List *newList(int size);
 
 List *addsize(List *list, size_t inc);

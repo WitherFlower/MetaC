@@ -3,12 +3,15 @@
 - [x] Extended List type to support binary search and insertion by pointer value
         With tests !!!
 - [x] Symbol list
-- [ ] Stop using identifiers for definition and assignment
-- [ ] Rewrite file generation to use static data structures
+- [x] Stop using identifiers for definition and assignment
+- [x] Rewrite file generation to use static data structures
 - [ ] Tree Evaluation
-        - [ ] Symbol table thing to store TGG rules in order and know what to apply
         - [ ] Store actions with # define inside of CTGG
+                requires thinking about he structure of the context
+        - [ ] Test by feeding the grammar into itself
+        - [ ] Figure out what to do with symbols
         - ...
+- [ ] Makefile for everything
 
 # 2024-04-04
 

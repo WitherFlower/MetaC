@@ -17,26 +17,6 @@ void fatal(char *format, ...) {
     exit(1);
 }
 
-union Object;
-
-typedef union Object *oop;
-
-enum Types {
-    Grammar,
-    Definition,
-    Assignment,
-    Binary,
-    Unary,
-    Dot,
-    Begin,
-    End,
-    String,
-    CharacterClass,
-    Action,
-    Identifier,
-    Symbol,
-};
-
 char *getTypeString(enum Types type) {
     switch (type) {
         case Grammar: return "Grammar";
@@ -55,42 +35,12 @@ char *getTypeString(enum Types type) {
     }
 }
 
-struct Grammar {
-    int type;
-    List *definitions;
-};
-
-struct Definition {
-    int type;
-    oop name;
-    oop rule;
-};
-
-struct Assignment {
-    int type;
-    oop variableName;
-    oop ruleIdentifier;
-};
-
-struct Binary {
-    int type;
-    int op;
-    oop leftExpression;
-    oop rightExpression;
-};
-
 const char *getBinaryOpString(enum BinaryOperators op) {
     switch (op) {
         case Sequence: return "Sequence";
         case Alternation: return "Alternation";
     }
 }
-
-struct Unary {
-    int type;
-    int op;
-    oop expression;
-};
 
 const char *getUnaryOpString(enum UnaryOperators op) {
     switch (op) {
@@ -101,60 +51,6 @@ const char *getUnaryOpString(enum UnaryOperators op) {
         case Not: return "Not";
     }
 }
-
-struct Dot {
-    int type;
-};
-
-struct Begin {
-    int type;
-};
-
-struct End {
-    int type;
-};
-
-struct String {
-    int type;
-    char *value;
-};
-
-struct CharacterClass {
-    int type;
-    char *value;
-};
-
-struct Action {
-    int type;
-    char *value;
-};
-
-struct Identifier {
-    int type;
-    char *value;
-};
-
-struct Symbol {
-    int type;
-    char *string;
-};
-
-union Object {
-    int type;
-    struct Grammar Grammar;
-    struct Definition Definition;
-    struct Assignment Assignment;
-    struct Binary Binary;
-    struct Unary Unary;
-    struct Dot Dot;
-    struct Begin Begin;
-    struct End End;
-    struct String String;
-    struct CharacterClass CharacterClass;
-    struct Action Action;
-    struct Identifier Identifier;
-    struct Symbol Symbol;
-};
 
 oop _newObject(enum Types type, size_t size) {
     oop this = malloc(size);
@@ -416,6 +312,40 @@ char *convertSpecialChars(char *sourceString) {
  */
 char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
     switch (expression->type) {
+        case Definition: {
+            
+            char *definitionName = writeExpression(fptr, get(expression, Definition, name), declarationCount);
+            char *ruleVarName = writeExpression(fptr, get(expression, Definition, rule), declarationCount);
+
+            const char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            fprintf(fptr, "union Object %s = { .Definition.type = Definition, .Definition.name = &%s, .Definition.rule = &%s };\n",
+                    fullVariableName, definitionName, ruleVarName);
+
+            return fullVariableName;
+        }
+        case Assignment: {
+            
+            char *assignedVariableName = writeExpression(fptr, get(expression, Assignment, variableName), declarationCount);
+            char *ruleIdentifierName = writeExpression(fptr, get(expression, Assignment, ruleIdentifier), declarationCount);
+
+            const char *variableName = getTypeString(expression->type);
+
+            (*declarationCount)++;
+
+            char *fullVariableName = malloc(sizeof(char) * 64);
+            sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
+
+            fprintf(fptr, "union Object %s = { .Assignment.type = Assignment, .Assignment.variableName = &%s, .Assignment.ruleIdentifier = &%s };\n",
+                    fullVariableName, assignedVariableName, ruleIdentifierName);
+
+            return fullVariableName;
+        }
         case Binary: {
 
             char *leftExpressionVarName = writeExpression(fptr, get(expression, Binary, leftExpression), declarationCount);
@@ -430,7 +360,7 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
 
             const char *operatorName = getBinaryOpString(op);
-            fprintf(fptr, "\toop %s = newBinary(%s, %s, %s);\n", 
+            fprintf(fptr, "union Object %s = { .Binary.type = Binary, .Binary.op = %s, .Binary.leftExpression = &%s, .Binary.rightExpression = &%s };\n",
                     fullVariableName, operatorName, leftExpressionVarName, rightExpressionVarName);
 
 
@@ -449,7 +379,8 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
 
             const char *operatorName = getUnaryOpString(op);
-            fprintf(fptr, "\toop %s = newUnary(%s, %s);\n", fullVariableName, operatorName, expressionVarName);
+            fprintf(fptr, "union Object %s = { .Unary.type = Unary, .Unary.op = %s, .Unary.expression = &%s };\n",
+                    fullVariableName, operatorName, expressionVarName);
 
             return fullVariableName;
         }
@@ -462,7 +393,7 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *fullVariableName = malloc(sizeof(char) * 64);
             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
 
-            fprintf(fptr, "\toop %s = newDot();\n", fullVariableName);
+            fprintf(fptr, "union Object %s = { .Dot.type = Dot };\n", fullVariableName);
 
             return fullVariableName;
         }
@@ -476,7 +407,7 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *fullVariableName = malloc(sizeof(char) * 64);
             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
 
-            fprintf(fptr, "\toop %s = newBegin();\n", fullVariableName);
+            fprintf(fptr, "union Object %s = { .Begin.type = Begin };\n", fullVariableName);
 
             return fullVariableName;
         }
@@ -490,7 +421,7 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *fullVariableName = malloc(sizeof(char) * 64);
             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
 
-            fprintf(fptr, "\toop %s = newEnd();\n", fullVariableName);
+            fprintf(fptr, "union Object %s = { .End.type = End };\n", fullVariableName);
 
             return fullVariableName;
         }
@@ -507,7 +438,8 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *value = get(expression, String, value);
 
             char *convertedValue = convertSpecialChars(value);
-            fprintf(fptr, "\toop %s = newString(\"%s\");\n", fullVariableName, convertedValue);
+            fprintf(fptr, "union Object %s = { .String.type = String, .String.value = \"%s\" };\n",
+                    fullVariableName, convertedValue);
             free(convertedValue);
 
             return fullVariableName;
@@ -525,7 +457,8 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *value = get(expression, CharacterClass, value);
 
             char *convertedValue = convertSpecialChars(value);
-            fprintf(fptr, "\toop %s = newCharacterClass(\"%s\");\n", fullVariableName, convertedValue);
+            fprintf(fptr, "union Object %s = { .CharacterClass.type = CharacterClass, .CharacterClass.value = \"%s\" };\n",
+                    fullVariableName, convertedValue);
             free(convertedValue);
 
             return fullVariableName;
@@ -543,7 +476,8 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *value = get(expression, Action, value);
 
             char *convertedValue = convertSpecialChars(value);
-            fprintf(fptr, "\toop %s = newAction(\"%s\");\n", fullVariableName, convertedValue);
+            fprintf(fptr, "union Object %s = { .Action.type = Action, .Action.value = \"%s\" };\n",
+                    fullVariableName, convertedValue);
             free(convertedValue);
 
             return fullVariableName;
@@ -561,7 +495,8 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *value = get(expression, Identifier, value);
 
             char *convertedValue = convertSpecialChars(value);
-            fprintf(fptr, "\toop %s = newIdentifier(\"%s\");\n", fullVariableName, convertedValue);
+            fprintf(fptr, "union Object %s = { .Identifier.type = Identifier, .Identifier.value = \"%s\" };\n",
+                    fullVariableName, convertedValue);
             free(convertedValue);
 
             return fullVariableName;
@@ -573,19 +508,33 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
 void writeTree(oop grammar) {
     FILE *fptr = fopen("grammar_get_tree.c", "w");
 
-    fprintf(fptr, "#include \"grammar_objects.h\"\n\noop getGrammar() {\n");
-    fprintf(fptr, "\toop grammar = newGrammar();\n");
+    fprintf(fptr, "#include \"grammar_objects.h\"\n\n");
 
     List *definitions = get(grammar, Grammar, definitions);
     int expressionCount = 0;
 
+    List *definitionVariableNames = newList(10);
+
     for (int i = 0; i < definitions->used; i++) {
         char *varName = writeExpression(fptr, definitions->data[i], &expressionCount);
-        fprintf(fptr, "\taddRuleDefinitionToGrammar(grammar, %s);\n\n", varName);
-        free(varName);
+        fprintf(fptr, "\n");
+        definitionVariableNames = push(definitionVariableNames, newString(varName));
     }
 
-    fprintf(fptr, "\treturn grammar;\n}\n");
+    fprintf(fptr, "List definitions = { .size = %lu, .used = %lu, .data = { ",
+            definitionVariableNames->size, definitionVariableNames->used); 
+
+    for (int i = 0; i < definitionVariableNames->used; i++) {
+        fprintf(fptr, "&%s, ", get(definitionVariableNames->data[i], String, value));
+    }
+
+    fprintf(fptr, "} };\n\n");
+
+    fprintf(fptr, "union Object grammar = { .Grammar.type = Grammar, .Grammar.definitions = &definitions };\n\n");
+
+    fprintf(fptr, "oop getGrammar() {\n");
+    fprintf(fptr, "\t return &grammar;\n");
+    fprintf(fptr, "}\n\n");
 
     fclose(fptr);
 }

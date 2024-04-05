@@ -1,9 +1,34 @@
 #ifndef GRAMMAR_OBJECTS_H
 #define GRAMMAR_OBJECTS_H
 
+#include <stdlib.h>
+
 union Object;
 
 typedef union Object *oop;
+
+typedef struct 
+{
+    size_t size;
+    size_t used; 
+    oop data[];
+} List;
+
+enum Types {
+    Grammar,
+    Definition,
+    Assignment,
+    Binary,
+    Unary,
+    Dot,
+    Begin,
+    End,
+    String,
+    CharacterClass,
+    Action,
+    Identifier,
+    Symbol,
+};
 
 enum BinaryOperators {
     Sequence,
@@ -16,6 +41,92 @@ enum UnaryOperators {
     Optional,
     And,
     Not,
+};
+
+struct Grammar {
+    int type;
+    List *definitions;
+};
+
+
+struct Definition {
+    int type;
+    oop name;
+    oop rule;
+};
+
+struct Assignment {
+    int type;
+    oop variableName;
+    oop ruleIdentifier;
+};
+
+struct Binary {
+    int type;
+    int op;
+    oop leftExpression;
+    oop rightExpression;
+};
+
+struct Unary {
+    int type;
+    int op;
+    oop expression;
+};
+
+struct Dot {
+    int type;
+};
+
+struct Begin {
+    int type;
+};
+
+struct End {
+    int type;
+};
+
+struct String {
+    int type;
+    char *value;
+};
+
+struct CharacterClass {
+    int type;
+    char *value;
+};
+
+struct Action {
+    int type;
+    char *value;
+};
+
+struct Identifier {
+    int type;
+    char *value;
+};
+
+struct Symbol {
+    int type;
+    char *string;
+};
+
+
+union Object {
+    int type;
+    struct Grammar Grammar;
+    struct Definition Definition;
+    struct Assignment Assignment;
+    struct Binary Binary;
+    struct Unary Unary;
+    struct Dot Dot;
+    struct Begin Begin;
+    struct End End;
+    struct String String;
+    struct CharacterClass CharacterClass;
+    struct Action Action;
+    struct Identifier Identifier;
+    struct Symbol Symbol;
 };
 
 oop newGrammar();
