@@ -44,6 +44,10 @@ oop newIdentifier(char *value);
 
 oop newInteger(int value);
 
+oop newSymbol(char *string);
+
+int objectEquals(oop obj, oop other);
+
 void printTree(oop grammar);
 
 void writeTree(oop grammar);

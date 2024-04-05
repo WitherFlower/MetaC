@@ -1,8 +1,11 @@
+#include "grammar_objects.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <ctype.h>
+#include <strings.h>
+#include "list.h"
 
 void fatal(char *format, ...) {
     va_list ap;
@@ -18,63 +21,6 @@ union Object;
 
 typedef union Object *oop;
 
-// List
-
-typedef struct 
-{
-    size_t size;
-    size_t used; 
-    oop data[];
-} List;
-
-
-List *addsize(List *list, size_t inc)
-{
-    size_t newsize = 0;
-    size_t newused = 0;
-    
-    if(list) {
-        newsize = list -> size + inc;
-        newused = list -> used;
-    }
-
-    list = realloc(list, sizeof(*list) + newsize * sizeof(oop*));
-    printf("Reallocating list\n");
-
-    if(list) {
-        list -> size = newsize;
-        list -> used = newused;
-    }
-
-    return list;
-}
-
-List *push(List *list, oop object) {
-    
-    if (list->size == list->used) {
-        List *new_list = addsize(list, 32);
-        new_list->data[new_list->used] = object;
-        new_list->used += 1;
-        return new_list;
-
-    } else {
-        list->data[list->used] = object;
-        list->used += 1;
-        return list;
-
-    }
-}
-
-List *newList(int size) {
-    
-    List* list = malloc(sizeof(List) + size * sizeof(oop*));
-    
-    list->size = size;
-    list->used = 0;
-    
-    return list;
-}
-
 enum Types {
     Grammar,
     Binary,
@@ -86,6 +32,7 @@ enum Types {
     CharacterClass,
     Action,
     Identifier,
+    Symbol,
 };
 
 char *getTypeString(enum Types type) {
@@ -100,6 +47,7 @@ char *getTypeString(enum Types type) {
         case CharacterClass: return "CharacterClass";
         case Action: return "Action";
         case Identifier: return "Identifier";
+        case Symbol: return "Symbol";
     }
 }
 
@@ -115,14 +63,7 @@ struct Binary {
     oop rightExpression;
 };
 
-enum BinaryOperators {
-    Sequence,
-    Alternation,
-    Definition,
-    Assignment,
-};
-
-char *getBinaryOpString(enum BinaryOperators op) {
+const char *getBinaryOpString(enum BinaryOperators op) {
     switch (op) {
         case Sequence: return "Sequence";
         case Alternation: return "Alternation";
@@ -137,15 +78,7 @@ struct Unary {
     oop expression;
 };
 
-enum UnaryOperators {
-    Star,
-    Plus,
-    Optional,
-    And,
-    Not,
-};
-
-char *getUnaryOpString(enum UnaryOperators op) {
+const char *getUnaryOpString(enum UnaryOperators op) {
     switch (op) {
         case Star: return "Star";
         case Plus: return "Plus";
@@ -187,6 +120,11 @@ struct Identifier {
     char *value;
 };
 
+struct Symbol {
+    int type;
+    char *string;
+};
+
 union Object {
     int type;
     struct Grammar Grammar;
@@ -199,6 +137,7 @@ union Object {
     struct CharacterClass CharacterClass;
     struct Action Action;
     struct Identifier Identifier;
+    struct Symbol Symbol;
 };
 
 oop _newObject(enum Types type, size_t size) {
@@ -216,6 +155,10 @@ oop _checkType(oop object, enum Types type, char *file, int lineNumber) {
 #define newObject(TYPE) _newObject(TYPE, sizeof (struct TYPE))
 #define get(VAL, TYPE, FIELD) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD
 #define set(VAL, TYPE, FIELD, NEW_FIELD_VALUE) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD=NEW_FIELD_VALUE
+
+oop toSymbol(List *symbols, char *string) {
+    
+}
 
 oop newGrammar() {
     oop grammar = newObject(Grammar);
@@ -297,6 +240,39 @@ oop newIdentifier(char *value) {
     return identifier;
 }
 
+oop newSymbol(char *string) {
+    int length = strlen(string) + 1;
+    char *newString = malloc(sizeof(char) * length);
+    strcpy(newString, string);
+
+    oop symbol = newObject(Symbol);
+    set(symbol, Symbol, string, newString);
+    return symbol;
+}
+
+oop addNewSymbolToList(List *symbolList, char *string) {
+    oop s = newSymbol(string);
+    int index = indexOfByValue(symbolList, s);
+    if (index == -1) {
+        *symbolList = *insertSorted(symbolList, s);
+        return s;
+    } else {
+        free(s);
+        return symbolList->data[index];
+    }
+}
+
+int objectEquals(oop obj, oop other) {
+    if (obj->type != other->type) {
+        return 0;
+    }
+
+    switch (obj->type) {
+        case Symbol: return strcmp(get(obj, Symbol, string), get(other, Symbol, string)) == 0; 
+        default: fatal("Equality unimplemented for type %s", getTypeString(obj->type)); return 0;
+    }
+}
+
 // Print stuff
 
 void printExpression(oop expression, int depth) {
@@ -366,7 +342,7 @@ void printTree(oop grammar) {
 }
 
 char *convertSpecialChars(char *sourceString) {
-    char *convertedString = malloc(sizeof(char) * strlen(sourceString));
+    char *convertedString = malloc(sizeof(char) * 2 * strlen(sourceString));
     convertedString[0] = 0;
 
     for (int i = 0; i < strlen(sourceString); i++) {
@@ -405,16 +381,14 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *rightExpressionVarName = writeExpression(fptr, get(expression, Binary, rightExpression), declarationCount);
             
             enum BinaryOperators op = get(expression, Binary, op);
-            char *variableName = getBinaryOpString(op);
+            const char *variableName = getBinaryOpString(op);
 
             (*declarationCount)++;
 
             char *fullVariableName = malloc(sizeof(char) * 64);
             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
 
-            // Do I need to free variableName after this ???
-
-            char *operatorName = getBinaryOpString(op);
+            const char *operatorName = getBinaryOpString(op);
             fprintf(fptr, "\toop %s = newBinary(%s, %s, %s);\n", 
                     fullVariableName, operatorName, leftExpressionVarName, rightExpressionVarName);
 
@@ -426,14 +400,14 @@ char *writeExpression(FILE *fptr, oop expression, int *declarationCount) {
             char *expressionVarName = writeExpression(fptr, get(expression, Unary, expression), declarationCount);
 
             enum UnaryOperators op = get(expression, Unary, op);
-            char *variableName = getUnaryOpString(op);
+            const char *variableName = getUnaryOpString(op);
 
             (*declarationCount)++;
 
             char *fullVariableName = malloc(sizeof(char) * 64);
             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
 
-            char *operatorName = getUnaryOpString(op);
+            const char *operatorName = getUnaryOpString(op);
             fprintf(fptr, "\toop %s = newUnary(%s, %s);\n", fullVariableName, operatorName, expressionVarName);
 
             return fullVariableName;
@@ -567,9 +541,19 @@ void writeTree(oop grammar) {
     for (int i = 0; i < definitions->used; i++) {
         char *varName = writeExpression(fptr, definitions->data[i], &expressionCount);
         fprintf(fptr, "\taddRuleDefinitionToGrammar(grammar, %s);\n\n", varName);
+        free(varName);
     }
 
     fprintf(fptr, "\treturn grammar;\n}\n");
 
     fclose(fptr);
 }
+
+
+
+/*
+ * Evaluates the tree representing grammars and outputs the tree representation of the grammar represented by string.
+ */
+oop evaluateTree(oop grammar, char *string) {
+}
+

@@ -1,10 +1,33 @@
+# 2024-04-05
+
+- [x] Extended List type to support binary search and insertion by pointer value
+        With tests !!!
+- [x] Symbol list
+- [ ] Stop using identifiers for declaration and assignment
+- [ ] Rewrite file generation to use static data structures
+- [ ] Tree Evaluation
+        - [ ] Symbol table thing to store TGG rules in order and know what to apply
+        - [ ] Store actions with # define inside of CTGG
+        - ...
+
+# 2024-04-04
+
+- [x] Meeting with Piumarta sensei, established direction
+- List of symbols
+    - intern function that transforms string into symbol (pointer)
+    - Sorted array of symbols to store them and search when theres a new one
+        - look into memmove()
+    - make unit tests
+- Parallel list storing the trees for every rule (I should already have this one)
+- Make the generated file using static data declarations
+- Action stuff with # define
+
 # 2024-04-03
 
 - [x] Fix prefix unaries
 
-- [ ] Figure out how to evaluate the tree
-    - What should we get as a result of execution ?
-        grammar g ---> eval G-Tree ---> ???
+- [x] Figure out how to evaluate the tree
+      Thought of a solution, need to confirm direction with Piumarta sensei tomorrow.
 
 Questions : 
 
@@ -15,7 +38,8 @@ better names for the unary operators ?
 shouldn't assignment and declaration be binary operators ?
 why represent a sequence as a binary ?
 order of sequence problem ?
-grammar_objects.c:391 : freeing thing question
+is it correct that all variables are scoped to their definition ?
+    aka you can't a new scope for identifiers inside a definition
 
 # 2024-04-02
 
