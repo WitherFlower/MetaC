@@ -1,3 +1,20 @@
+# 2024-04-09
+
+- [x] Debugging
+- [x] Regex madness
+
+- [ ] ~~Makefile~~ Mason for everything
+        - [ ] Merci Nam
+
+
+# 2024-04-08
+
+- [x] Tree Evaluation
+        - [x] Store actions with # define inside of CTGG
+                requires thinking about he structure of the context
+        - [x] Test by feeding the grammar into itself
+                - Needs debugging
+
 # 2024-04-05
 
 - [x] Extended List type to support binary search and insertion by pointer value
@@ -5,13 +22,6 @@
 - [x] Symbol list
 - [x] Stop using identifiers for definition and assignment
 - [x] Rewrite file generation to use static data structures
-- [ ] Tree Evaluation
-        - [ ] Store actions with # define inside of CTGG
-                requires thinking about he structure of the context
-        - [ ] Test by feeding the grammar into itself
-        - [ ] Figure out what to do with symbols
-        - ...
-- [ ] Makefile for everything
 
 # 2024-04-04
 

@@ -14,6 +14,20 @@ typedef struct
     oop data[];
 } List;
 
+typedef struct {
+    List *varNames;
+    List *vars;
+    oop returnValue;
+    char *input;
+} Context;
+
+typedef struct {
+    char *string;
+    int cursor;
+    int lastBegin;
+    List *callStack;
+} ReadState;
+
 enum Types {
     Grammar,
     Definition,
@@ -99,6 +113,7 @@ struct CharacterClass {
 struct Action {
     int type;
     char *value;
+    void (*function)(Context *);
 };
 
 struct Identifier {
@@ -110,7 +125,6 @@ struct Symbol {
     int type;
     char *string;
 };
-
 
 union Object {
     int type;
@@ -128,6 +142,14 @@ union Object {
     struct Identifier Identifier;
     struct Symbol Symbol;
 };
+
+oop _newObject(enum Types type, size_t size);
+
+oop _checkType(oop object, enum Types type, char *file, int lineNumber);
+
+#define newObject(TYPE) _newObject(TYPE, sizeof (struct TYPE))
+#define get(VAL, TYPE, FIELD) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD
+#define set(VAL, TYPE, FIELD, NEW_FIELD_VALUE) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD=NEW_FIELD_VALUE
 
 oop newGrammar();
 
@@ -151,7 +173,7 @@ oop newString(char *value);
 
 oop newCharacterClass(char *value);
 
-oop newAction(char *value);
+oop newAction(char *value, void (*function)());
 
 oop newIdentifier(char *value);
 
@@ -159,11 +181,17 @@ oop newInteger(int value);
 
 oop newSymbol(char *string);
 
+oop addSymbolToSymbolList(List *symbolList, oop symbol);
+
+oop addNewStringToSymbolList(List *symbolList, char *string);
+
 int objectEquals(oop obj, oop other);
 
 void printTree(oop grammar);
 
 void writeTree(oop grammar);
+
+oop evaluateTree(oop grammar, char *string);
 
 #endif
 

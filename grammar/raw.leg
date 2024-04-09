@@ -1,18 +1,7 @@
-%{
-
-#include <stdio.h>
-#include <string.h>
-
-#include "grammar_objects.h"
-
-#define YYSTYPE oop
-
-%}
-
 grammar =       - r:root
                ( declaration | d:definition { addRuleDefinitionToGrammar(r, d); } )+
                trailer? end-of-file
-               { printTree(r); writeTree(r); }
+               { printTree(r); /*writeTree(r);*/ }
 
 root = { $$ = newGrammar(); }
 
@@ -109,13 +98,4 @@ space =         ' ' | '\t' | end-of-line
 comment =       '#' ( !end-of-line . )* end-of-line
 end-of-line =   '\r\n' | '\n' | '\r'
 end-of-file =   !.
-
-%%
-
-int main()
-{
-    while (yyparse());
-
-    return 0;
-}
 
