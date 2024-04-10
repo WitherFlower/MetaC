@@ -10,7 +10,22 @@ union Object Identifier7 = { .Identifier.type = Identifier, .Identifier.value = 
 union Object String8 = { .String.type = String, .String.value = "d" };
 union Object Identifier9 = { .Identifier.type = Identifier, .Identifier.value = "definition" };
 union Object Assignment10 = { .Assignment.type = Assignment, .Assignment.variableName = &String8, .Assignment.ruleIdentifier = &Identifier9 };
-union Object Action11 = { .Action.type = Action, .Action.value = " addRuleDefinitionToGrammar(r, d); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define r ctx->vars->data[0]
+#define d ctx->vars->data[1]
+
+void Action11_function(Context *ctx) {
+	 addRuleDefinitionToGrammar(r, d); 
+}
+
+#undef r
+#undef d
+#undef $$
+#undef yytext
+
+union Object Action11 = { .Action.type = Action, .Action.value = " addRuleDefinitionToGrammar(r, d); ", .Action.function = Action11_function };
 union Object Sequence12 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment10, .Binary.rightExpression = &Action11 };
 union Object Alternation13 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Identifier7, .Binary.rightExpression = &Sequence12 };
 union Object Plus14 = { .Unary.type = Unary, .Unary.op = Plus, .Unary.expression = &Alternation13 };
@@ -20,12 +35,38 @@ union Object Optional17 = { .Unary.type = Unary, .Unary.op = Optional, .Unary.ex
 union Object Sequence18 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence15, .Binary.rightExpression = &Optional17 };
 union Object Identifier19 = { .Identifier.type = Identifier, .Identifier.value = "end-of-file" };
 union Object Sequence20 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence18, .Binary.rightExpression = &Identifier19 };
-union Object Action21 = { .Action.type = Action, .Action.value = " printTree(r); writeTree(r); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define r ctx->vars->data[0]
+#define d ctx->vars->data[1]
+
+void Action21_function(Context *ctx) {
+	 printTree(r); /*writeTree(r);*/ 
+}
+
+#undef r
+#undef d
+#undef $$
+#undef yytext
+
+union Object Action21 = { .Action.type = Action, .Action.value = " printTree(r); /*writeTree(r);*/ ", .Action.function = Action21_function };
 union Object Sequence22 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence20, .Binary.rightExpression = &Action21 };
 union Object Definition23 = { .Definition.type = Definition, .Definition.name = &String1, .Definition.rule = &Sequence22 };
 
 union Object String24 = { .String.type = String, .String.value = "root" };
-union Object Action25 = { .Action.type = Action, .Action.value = " $$ = newGrammar(); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+
+void Action25_function(Context *ctx) {
+	 $$ = newGrammar(); 
+}
+
+#undef $$
+#undef yytext
+
+union Object Action25 = { .Action.type = Action, .Action.value = " $$ = newGrammar(); ", .Action.function = Action25_function };
 union Object Definition26 = { .Definition.type = Definition, .Definition.name = &String24, .Definition.rule = &Action25 };
 
 union Object String27 = { .String.type = String, .String.value = "declaration" };
@@ -68,7 +109,22 @@ union Object Sequence61 = { .Binary.type = Binary, .Binary.op = Sequence, .Binar
 union Object Identifier62 = { .Identifier.type = Identifier, .Identifier.value = "SEMICOLON" };
 union Object Optional63 = { .Unary.type = Unary, .Unary.op = Optional, .Unary.expression = &Identifier62 };
 union Object Sequence64 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence61, .Binary.rightExpression = &Optional63 };
-union Object Action65 = { .Action.type = Action, .Action.value = " $$ = newDefinition(i, e); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i ctx->vars->data[0]
+#define e ctx->vars->data[1]
+
+void Action65_function(Context *ctx) {
+	 $$ = newDefinition(i, e); 
+}
+
+#undef i
+#undef e
+#undef $$
+#undef yytext
+
+union Object Action65 = { .Action.type = Action, .Action.value = " $$ = newDefinition(i, e); ", .Action.function = Action65_function };
 union Object Sequence66 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence64, .Binary.rightExpression = &Action65 };
 union Object Definition67 = { .Definition.type = Definition, .Definition.name = &String52, .Definition.rule = &Sequence66 };
 
@@ -81,11 +137,41 @@ union Object String73 = { .String.type = String, .String.value = "s2" };
 union Object Identifier74 = { .Identifier.type = Identifier, .Identifier.value = "sequence" };
 union Object Assignment75 = { .Assignment.type = Assignment, .Assignment.variableName = &String73, .Assignment.ruleIdentifier = &Identifier74 };
 union Object Sequence76 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier72, .Binary.rightExpression = &Assignment75 };
-union Object Action77 = { .Action.type = Action, .Action.value = " s1 = newBinary(Alternation, s1, s2); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define s1 ctx->vars->data[0]
+#define s2 ctx->vars->data[1]
+
+void Action77_function(Context *ctx) {
+	 s1 = newBinary(Alternation, s1, s2); 
+}
+
+#undef s1
+#undef s2
+#undef $$
+#undef yytext
+
+union Object Action77 = { .Action.type = Action, .Action.value = " s1 = newBinary(Alternation, s1, s2); ", .Action.function = Action77_function };
 union Object Sequence78 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence76, .Binary.rightExpression = &Action77 };
 union Object Star79 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Sequence78 };
 union Object Sequence80 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment71, .Binary.rightExpression = &Star79 };
-union Object Action81 = { .Action.type = Action, .Action.value = " $$ = s1; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define s1 ctx->vars->data[0]
+#define s2 ctx->vars->data[1]
+
+void Action81_function(Context *ctx) {
+	 $$ = s1; 
+}
+
+#undef s1
+#undef s2
+#undef $$
+#undef yytext
+
+union Object Action81 = { .Action.type = Action, .Action.value = " $$ = s1; ", .Action.function = Action81_function };
 union Object Sequence82 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence80, .Binary.rightExpression = &Action81 };
 union Object Definition83 = { .Definition.type = Definition, .Definition.name = &String68, .Definition.rule = &Sequence82 };
 
@@ -96,11 +182,41 @@ union Object Assignment87 = { .Assignment.type = Assignment, .Assignment.variabl
 union Object String88 = { .String.type = String, .String.value = "f" };
 union Object Identifier89 = { .Identifier.type = Identifier, .Identifier.value = "error" };
 union Object Assignment90 = { .Assignment.type = Assignment, .Assignment.variableName = &String88, .Assignment.ruleIdentifier = &Identifier89 };
-union Object Action91 = { .Action.type = Action, .Action.value = " e = newBinary(Sequence, e, f); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define e ctx->vars->data[0]
+#define f ctx->vars->data[1]
+
+void Action91_function(Context *ctx) {
+	 e = newBinary(Sequence, e, f); 
+}
+
+#undef e
+#undef f
+#undef $$
+#undef yytext
+
+union Object Action91 = { .Action.type = Action, .Action.value = " e = newBinary(Sequence, e, f); ", .Action.function = Action91_function };
 union Object Sequence92 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment90, .Binary.rightExpression = &Action91 };
 union Object Star93 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Sequence92 };
 union Object Sequence94 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment87, .Binary.rightExpression = &Star93 };
-union Object Action95 = { .Action.type = Action, .Action.value = " $$ = e; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define e ctx->vars->data[0]
+#define f ctx->vars->data[1]
+
+void Action95_function(Context *ctx) {
+	 $$ = e; 
+}
+
+#undef e
+#undef f
+#undef $$
+#undef yytext
+
+union Object Action95 = { .Action.type = Action, .Action.value = " $$ = e; ", .Action.function = Action95_function };
 union Object Sequence96 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence94, .Binary.rightExpression = &Action95 };
 union Object Definition97 = { .Definition.type = Definition, .Definition.name = &String84, .Definition.rule = &Sequence96 };
 
@@ -113,7 +229,20 @@ union Object Identifier103 = { .Identifier.type = Identifier, .Identifier.value 
 union Object Sequence104 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier102, .Binary.rightExpression = &Identifier103 };
 union Object Optional105 = { .Unary.type = Unary, .Unary.op = Optional, .Unary.expression = &Sequence104 };
 union Object Sequence106 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment101, .Binary.rightExpression = &Optional105 };
-union Object Action107 = { .Action.type = Action, .Action.value = " $$ = p; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define p ctx->vars->data[0]
+
+void Action107_function(Context *ctx) {
+	 $$ = p; 
+}
+
+#undef p
+#undef $$
+#undef yytext
+
+union Object Action107 = { .Action.type = Action, .Action.value = " $$ = p; ", .Action.function = Action107_function };
 union Object Sequence108 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence106, .Binary.rightExpression = &Action107 };
 union Object Definition109 = { .Definition.type = Definition, .Definition.name = &String98, .Definition.rule = &Sequence108 };
 
@@ -126,20 +255,59 @@ union Object String115 = { .String.type = String, .String.value = "s" };
 union Object Identifier116 = { .Identifier.type = Identifier, .Identifier.value = "suffix" };
 union Object Assignment117 = { .Assignment.type = Assignment, .Assignment.variableName = &String115, .Assignment.ruleIdentifier = &Identifier116 };
 union Object Sequence118 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier114, .Binary.rightExpression = &Assignment117 };
-union Object Action119 = { .Action.type = Action, .Action.value = " $$ = newUnary(And, s); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define s ctx->vars->data[0]
+
+void Action119_function(Context *ctx) {
+	 $$ = newUnary(And, s); 
+}
+
+#undef s
+#undef $$
+#undef yytext
+
+union Object Action119 = { .Action.type = Action, .Action.value = " $$ = newUnary(And, s); ", .Action.function = Action119_function };
 union Object Sequence120 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence118, .Binary.rightExpression = &Action119 };
 union Object Identifier121 = { .Identifier.type = Identifier, .Identifier.value = "NOT" };
 union Object String122 = { .String.type = String, .String.value = "s" };
 union Object Identifier123 = { .Identifier.type = Identifier, .Identifier.value = "suffix" };
 union Object Assignment124 = { .Assignment.type = Assignment, .Assignment.variableName = &String122, .Assignment.ruleIdentifier = &Identifier123 };
 union Object Sequence125 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier121, .Binary.rightExpression = &Assignment124 };
-union Object Action126 = { .Action.type = Action, .Action.value = " $$ = newUnary(Not, s); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define s ctx->vars->data[0]
+
+void Action126_function(Context *ctx) {
+	 $$ = newUnary(Not, s); 
+}
+
+#undef s
+#undef $$
+#undef yytext
+
+union Object Action126 = { .Action.type = Action, .Action.value = " $$ = newUnary(Not, s); ", .Action.function = Action126_function };
 union Object Sequence127 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence125, .Binary.rightExpression = &Action126 };
 union Object Alternation128 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence120, .Binary.rightExpression = &Sequence127 };
 union Object String129 = { .String.type = String, .String.value = "s" };
 union Object Identifier130 = { .Identifier.type = Identifier, .Identifier.value = "suffix" };
 union Object Assignment131 = { .Assignment.type = Assignment, .Assignment.variableName = &String129, .Assignment.ruleIdentifier = &Identifier130 };
-union Object Action132 = { .Action.type = Action, .Action.value = " $$ = s; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define s ctx->vars->data[0]
+
+void Action132_function(Context *ctx) {
+	 $$ = s; 
+}
+
+#undef s
+#undef $$
+#undef yytext
+
+union Object Action132 = { .Action.type = Action, .Action.value = " $$ = s; ", .Action.function = Action132_function };
 union Object Sequence133 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment131, .Binary.rightExpression = &Action132 };
 union Object Alternation134 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation128, .Binary.rightExpression = &Sequence133 };
 union Object Alternation135 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence113, .Binary.rightExpression = &Alternation134 };
@@ -150,19 +318,71 @@ union Object String138 = { .String.type = String, .String.value = "p" };
 union Object Identifier139 = { .Identifier.type = Identifier, .Identifier.value = "primary" };
 union Object Assignment140 = { .Assignment.type = Assignment, .Assignment.variableName = &String138, .Assignment.ruleIdentifier = &Identifier139 };
 union Object Identifier141 = { .Identifier.type = Identifier, .Identifier.value = "QUERY" };
-union Object Action142 = { .Action.type = Action, .Action.value = " p = newUnary(Optional, p); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define p ctx->vars->data[0]
+
+void Action142_function(Context *ctx) {
+	 p = newUnary(Optional, p); 
+}
+
+#undef p
+#undef $$
+#undef yytext
+
+union Object Action142 = { .Action.type = Action, .Action.value = " p = newUnary(Optional, p); ", .Action.function = Action142_function };
 union Object Sequence143 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier141, .Binary.rightExpression = &Action142 };
 union Object Identifier144 = { .Identifier.type = Identifier, .Identifier.value = "STAR" };
-union Object Action145 = { .Action.type = Action, .Action.value = " p = newUnary(Star, p); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define p ctx->vars->data[0]
+
+void Action145_function(Context *ctx) {
+	 p = newUnary(Star, p); 
+}
+
+#undef p
+#undef $$
+#undef yytext
+
+union Object Action145 = { .Action.type = Action, .Action.value = " p = newUnary(Star, p); ", .Action.function = Action145_function };
 union Object Sequence146 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier144, .Binary.rightExpression = &Action145 };
 union Object Alternation147 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence143, .Binary.rightExpression = &Sequence146 };
 union Object Identifier148 = { .Identifier.type = Identifier, .Identifier.value = "PLUS" };
-union Object Action149 = { .Action.type = Action, .Action.value = " p = newUnary(Plus, p); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define p ctx->vars->data[0]
+
+void Action149_function(Context *ctx) {
+	 p = newUnary(Plus, p); 
+}
+
+#undef p
+#undef $$
+#undef yytext
+
+union Object Action149 = { .Action.type = Action, .Action.value = " p = newUnary(Plus, p); ", .Action.function = Action149_function };
 union Object Sequence150 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier148, .Binary.rightExpression = &Action149 };
 union Object Alternation151 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation147, .Binary.rightExpression = &Sequence150 };
 union Object Optional152 = { .Unary.type = Unary, .Unary.op = Optional, .Unary.expression = &Alternation151 };
 union Object Sequence153 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment140, .Binary.rightExpression = &Optional152 };
-union Object Action154 = { .Action.type = Action, .Action.value = " $$ = p; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define p ctx->vars->data[0]
+
+void Action154_function(Context *ctx) {
+	 $$ = p; 
+}
+
+#undef p
+#undef $$
+#undef yytext
+
+union Object Action154 = { .Action.type = Action, .Action.value = " $$ = p; ", .Action.function = Action154_function };
 union Object Sequence155 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence153, .Binary.rightExpression = &Action154 };
 union Object Definition156 = { .Definition.type = Definition, .Definition.name = &String137, .Definition.rule = &Sequence155 };
 
@@ -179,7 +399,22 @@ union Object Sequence166 = { .Binary.type = Binary, .Binary.op = Sequence, .Bina
 union Object Identifier167 = { .Identifier.type = Identifier, .Identifier.value = "EQUAL" };
 union Object Not168 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &Identifier167 };
 union Object Sequence169 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence166, .Binary.rightExpression = &Not168 };
-union Object Action170 = { .Action.type = Action, .Action.value = " $$ = newAssignment(i1, i2) " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+
+void Action170_function(Context *ctx) {
+	 $$ = newAssignment(i1, i2); 
+}
+
+#undef i1
+#undef i2
+#undef $$
+#undef yytext
+
+union Object Action170 = { .Action.type = Action, .Action.value = " $$ = newAssignment(i1, i2); ", .Action.function = Action170_function };
 union Object Sequence171 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence169, .Binary.rightExpression = &Action170 };
 union Object String172 = { .String.type = String, .String.value = "i" };
 union Object Identifier173 = { .Identifier.type = Identifier, .Identifier.value = "ruleCallIdent" };
@@ -187,7 +422,24 @@ union Object Assignment174 = { .Assignment.type = Assignment, .Assignment.variab
 union Object Identifier175 = { .Identifier.type = Identifier, .Identifier.value = "EQUAL" };
 union Object Not176 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &Identifier175 };
 union Object Sequence177 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment174, .Binary.rightExpression = &Not176 };
-union Object Action178 = { .Action.type = Action, .Action.value = " $$ = i; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+#define i ctx->vars->data[2]
+
+void Action178_function(Context *ctx) {
+	 $$ = i; 
+}
+
+#undef i1
+#undef i2
+#undef i
+#undef $$
+#undef yytext
+
+union Object Action178 = { .Action.type = Action, .Action.value = " $$ = i; ", .Action.function = Action178_function };
 union Object Sequence179 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence177, .Binary.rightExpression = &Action178 };
 union Object Alternation180 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence171, .Binary.rightExpression = &Sequence179 };
 union Object Identifier181 = { .Identifier.type = Identifier, .Identifier.value = "OPEN" };
@@ -197,37 +449,198 @@ union Object Assignment184 = { .Assignment.type = Assignment, .Assignment.variab
 union Object Sequence185 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier181, .Binary.rightExpression = &Assignment184 };
 union Object Identifier186 = { .Identifier.type = Identifier, .Identifier.value = "CLOSE" };
 union Object Sequence187 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence185, .Binary.rightExpression = &Identifier186 };
-union Object Action188 = { .Action.type = Action, .Action.value = " $$ = e; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+#define i ctx->vars->data[2]
+#define e ctx->vars->data[3]
+
+void Action188_function(Context *ctx) {
+	 $$ = e; 
+}
+
+#undef i1
+#undef i2
+#undef i
+#undef e
+#undef $$
+#undef yytext
+
+union Object Action188 = { .Action.type = Action, .Action.value = " $$ = e; ", .Action.function = Action188_function };
 union Object Sequence189 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence187, .Binary.rightExpression = &Action188 };
 union Object Alternation190 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation180, .Binary.rightExpression = &Sequence189 };
 union Object String191 = { .String.type = String, .String.value = "l" };
 union Object Identifier192 = { .Identifier.type = Identifier, .Identifier.value = "literal" };
 union Object Assignment193 = { .Assignment.type = Assignment, .Assignment.variableName = &String191, .Assignment.ruleIdentifier = &Identifier192 };
-union Object Action194 = { .Action.type = Action, .Action.value = " $$ = l; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+#define i ctx->vars->data[2]
+#define e ctx->vars->data[3]
+#define l ctx->vars->data[4]
+
+void Action194_function(Context *ctx) {
+	 $$ = l; 
+}
+
+#undef i1
+#undef i2
+#undef i
+#undef e
+#undef l
+#undef $$
+#undef yytext
+
+union Object Action194 = { .Action.type = Action, .Action.value = " $$ = l; ", .Action.function = Action194_function };
 union Object Sequence195 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment193, .Binary.rightExpression = &Action194 };
 union Object Alternation196 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation190, .Binary.rightExpression = &Sequence195 };
 union Object String197 = { .String.type = String, .String.value = "c" };
 union Object Identifier198 = { .Identifier.type = Identifier, .Identifier.value = "class" };
 union Object Assignment199 = { .Assignment.type = Assignment, .Assignment.variableName = &String197, .Assignment.ruleIdentifier = &Identifier198 };
-union Object Action200 = { .Action.type = Action, .Action.value = " $$ = c; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+#define i ctx->vars->data[2]
+#define e ctx->vars->data[3]
+#define l ctx->vars->data[4]
+#define c ctx->vars->data[5]
+
+void Action200_function(Context *ctx) {
+	 $$ = c; 
+}
+
+#undef i1
+#undef i2
+#undef i
+#undef e
+#undef l
+#undef c
+#undef $$
+#undef yytext
+
+union Object Action200 = { .Action.type = Action, .Action.value = " $$ = c; ", .Action.function = Action200_function };
 union Object Sequence201 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment199, .Binary.rightExpression = &Action200 };
 union Object Alternation202 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation196, .Binary.rightExpression = &Sequence201 };
 union Object Identifier203 = { .Identifier.type = Identifier, .Identifier.value = "DOT" };
-union Object Action204 = { .Action.type = Action, .Action.value = " $$ = newDot(); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+#define i ctx->vars->data[2]
+#define e ctx->vars->data[3]
+#define l ctx->vars->data[4]
+#define c ctx->vars->data[5]
+
+void Action204_function(Context *ctx) {
+	 $$ = newDot(); 
+}
+
+#undef i1
+#undef i2
+#undef i
+#undef e
+#undef l
+#undef c
+#undef $$
+#undef yytext
+
+union Object Action204 = { .Action.type = Action, .Action.value = " $$ = newDot(); ", .Action.function = Action204_function };
 union Object Sequence205 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier203, .Binary.rightExpression = &Action204 };
 union Object Alternation206 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation202, .Binary.rightExpression = &Sequence205 };
 union Object String207 = { .String.type = String, .String.value = "a" };
 union Object Identifier208 = { .Identifier.type = Identifier, .Identifier.value = "action" };
 union Object Assignment209 = { .Assignment.type = Assignment, .Assignment.variableName = &String207, .Assignment.ruleIdentifier = &Identifier208 };
-union Object Action210 = { .Action.type = Action, .Action.value = " $$ = a; " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+#define i ctx->vars->data[2]
+#define e ctx->vars->data[3]
+#define l ctx->vars->data[4]
+#define c ctx->vars->data[5]
+#define a ctx->vars->data[6]
+
+void Action210_function(Context *ctx) {
+	 $$ = a; 
+}
+
+#undef i1
+#undef i2
+#undef i
+#undef e
+#undef l
+#undef c
+#undef a
+#undef $$
+#undef yytext
+
+union Object Action210 = { .Action.type = Action, .Action.value = " $$ = a; ", .Action.function = Action210_function };
 union Object Sequence211 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Assignment209, .Binary.rightExpression = &Action210 };
 union Object Alternation212 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation206, .Binary.rightExpression = &Sequence211 };
 union Object Identifier213 = { .Identifier.type = Identifier, .Identifier.value = "BEGIN" };
-union Object Action214 = { .Action.type = Action, .Action.value = " $$ = newBegin(); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+#define i ctx->vars->data[2]
+#define e ctx->vars->data[3]
+#define l ctx->vars->data[4]
+#define c ctx->vars->data[5]
+#define a ctx->vars->data[6]
+
+void Action214_function(Context *ctx) {
+	 $$ = newBegin(); 
+}
+
+#undef i1
+#undef i2
+#undef i
+#undef e
+#undef l
+#undef c
+#undef a
+#undef $$
+#undef yytext
+
+union Object Action214 = { .Action.type = Action, .Action.value = " $$ = newBegin(); ", .Action.function = Action214_function };
 union Object Sequence215 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier213, .Binary.rightExpression = &Action214 };
 union Object Alternation216 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation212, .Binary.rightExpression = &Sequence215 };
 union Object Identifier217 = { .Identifier.type = Identifier, .Identifier.value = "END" };
-union Object Action218 = { .Action.type = Action, .Action.value = " $$ = newEnd(); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+#define i1 ctx->vars->data[0]
+#define i2 ctx->vars->data[1]
+#define i ctx->vars->data[2]
+#define e ctx->vars->data[3]
+#define l ctx->vars->data[4]
+#define c ctx->vars->data[5]
+#define a ctx->vars->data[6]
+
+void Action218_function(Context *ctx) {
+	 $$ = newEnd(); 
+}
+
+#undef i1
+#undef i2
+#undef i
+#undef e
+#undef l
+#undef c
+#undef a
+#undef $$
+#undef yytext
+
+union Object Action218 = { .Action.type = Action, .Action.value = " $$ = newEnd(); ", .Action.function = Action218_function };
 union Object Sequence219 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier217, .Binary.rightExpression = &Action218 };
 union Object Alternation220 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation216, .Binary.rightExpression = &Sequence219 };
 union Object Definition221 = { .Definition.type = Definition, .Definition.name = &String157, .Definition.rule = &Alternation220 };
@@ -243,7 +656,18 @@ union Object End229 = { .End.type = End };
 union Object Sequence230 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence228, .Binary.rightExpression = &End229 };
 union Object Identifier231 = { .Identifier.type = Identifier, .Identifier.value = "-" };
 union Object Sequence232 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence230, .Binary.rightExpression = &Identifier231 };
-union Object Action233 = { .Action.type = Action, .Action.value = " $$ = newString(yytext); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+
+void Action233_function(Context *ctx) {
+	 $$ = newString(yytext); 
+}
+
+#undef $$
+#undef yytext
+
+union Object Action233 = { .Action.type = Action, .Action.value = " $$ = newString(yytext); ", .Action.function = Action233_function };
 union Object Sequence234 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence232, .Binary.rightExpression = &Action233 };
 union Object Definition235 = { .Definition.type = Definition, .Definition.name = &String222, .Definition.rule = &Sequence234 };
 
@@ -258,7 +682,18 @@ union Object End243 = { .End.type = End };
 union Object Sequence244 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence242, .Binary.rightExpression = &End243 };
 union Object Identifier245 = { .Identifier.type = Identifier, .Identifier.value = "-" };
 union Object Sequence246 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence244, .Binary.rightExpression = &Identifier245 };
-union Object Action247 = { .Action.type = Action, .Action.value = " $$ = newIdentifier(yytext); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+
+void Action247_function(Context *ctx) {
+	 $$ = newIdentifier(yytext); 
+}
+
+#undef $$
+#undef yytext
+
+union Object Action247 = { .Action.type = Action, .Action.value = " $$ = newIdentifier(yytext); ", .Action.function = Action247_function };
 union Object Sequence248 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence246, .Binary.rightExpression = &Action247 };
 union Object Definition249 = { .Definition.type = Definition, .Definition.name = &String236, .Definition.rule = &Sequence248 };
 
@@ -278,7 +713,18 @@ union Object CharacterClass262 = { .CharacterClass.type = CharacterClass, .Chara
 union Object Sequence263 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence261, .Binary.rightExpression = &CharacterClass262 };
 union Object Identifier264 = { .Identifier.type = Identifier, .Identifier.value = "-" };
 union Object Sequence265 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence263, .Binary.rightExpression = &Identifier264 };
-union Object Action266 = { .Action.type = Action, .Action.value = " $$ = newString(yytext); " };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+
+void Action266_function(Context *ctx) {
+	 $$ = newString(yytext); 
+}
+
+#undef $$
+#undef yytext
+
+union Object Action266 = { .Action.type = Action, .Action.value = " $$ = newString(yytext); ", .Action.function = Action266_function };
 union Object Sequence267 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence265, .Binary.rightExpression = &Action266 };
 union Object CharacterClass268 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "\"" };
 union Object Begin269 = { .Begin.type = Begin };
@@ -295,233 +741,268 @@ union Object CharacterClass279 = { .CharacterClass.type = CharacterClass, .Chara
 union Object Sequence280 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence278, .Binary.rightExpression = &CharacterClass279 };
 union Object Identifier281 = { .Identifier.type = Identifier, .Identifier.value = "-" };
 union Object Sequence282 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence280, .Binary.rightExpression = &Identifier281 };
-union Object Alternation283 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence267, .Binary.rightExpression = &Sequence282 };
-union Object Definition284 = { .Definition.type = Definition, .Definition.name = &String250, .Definition.rule = &Alternation283 };
 
-union Object String285 = { .String.type = String, .String.value = "class" };
-union Object String286 = { .String.type = String, .String.value = "[" };
-union Object Begin287 = { .Begin.type = Begin };
-union Object Sequence288 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String286, .Binary.rightExpression = &Begin287 };
-union Object String289 = { .String.type = String, .String.value = "]" };
-union Object Not290 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &String289 };
-union Object Identifier291 = { .Identifier.type = Identifier, .Identifier.value = "range" };
-union Object Sequence292 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Not290, .Binary.rightExpression = &Identifier291 };
-union Object Star293 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Sequence292 };
-union Object Sequence294 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence288, .Binary.rightExpression = &Star293 };
-union Object End295 = { .End.type = End };
-union Object Sequence296 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence294, .Binary.rightExpression = &End295 };
-union Object String297 = { .String.type = String, .String.value = "]" };
-union Object Sequence298 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence296, .Binary.rightExpression = &String297 };
-union Object Identifier299 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence300 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence298, .Binary.rightExpression = &Identifier299 };
-union Object Action301 = { .Action.type = Action, .Action.value = " $$ = newCharacterClass(yytext); " };
-union Object Sequence302 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence300, .Binary.rightExpression = &Action301 };
-union Object Definition303 = { .Definition.type = Definition, .Definition.name = &String285, .Definition.rule = &Sequence302 };
+#define $$ ctx->returnValue
+#define yytext ctx->input
 
-union Object String304 = { .String.type = String, .String.value = "range" };
-union Object Identifier305 = { .Identifier.type = Identifier, .Identifier.value = "char" };
-union Object String306 = { .String.type = String, .String.value = "-" };
-union Object Sequence307 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier305, .Binary.rightExpression = &String306 };
-union Object Identifier308 = { .Identifier.type = Identifier, .Identifier.value = "char" };
-union Object Sequence309 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence307, .Binary.rightExpression = &Identifier308 };
+void Action283_function(Context *ctx) {
+	 $$ = newString(yytext); 
+}
+
+#undef $$
+#undef yytext
+
+union Object Action283 = { .Action.type = Action, .Action.value = " $$ = newString(yytext); ", .Action.function = Action283_function };
+union Object Sequence284 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence282, .Binary.rightExpression = &Action283 };
+union Object Alternation285 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence267, .Binary.rightExpression = &Sequence284 };
+union Object Definition286 = { .Definition.type = Definition, .Definition.name = &String250, .Definition.rule = &Alternation285 };
+
+union Object String287 = { .String.type = String, .String.value = "class" };
+union Object String288 = { .String.type = String, .String.value = "[" };
+union Object Begin289 = { .Begin.type = Begin };
+union Object Sequence290 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String288, .Binary.rightExpression = &Begin289 };
+union Object String291 = { .String.type = String, .String.value = "]" };
+union Object Not292 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &String291 };
+union Object Identifier293 = { .Identifier.type = Identifier, .Identifier.value = "range" };
+union Object Sequence294 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Not292, .Binary.rightExpression = &Identifier293 };
+union Object Star295 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Sequence294 };
+union Object Sequence296 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence290, .Binary.rightExpression = &Star295 };
+union Object End297 = { .End.type = End };
+union Object Sequence298 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence296, .Binary.rightExpression = &End297 };
+union Object String299 = { .String.type = String, .String.value = "]" };
+union Object Sequence300 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence298, .Binary.rightExpression = &String299 };
+union Object Identifier301 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence302 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence300, .Binary.rightExpression = &Identifier301 };
+
+#define $$ ctx->returnValue
+#define yytext ctx->input
+
+void Action303_function(Context *ctx) {
+	 $$ = newCharacterClass(yytext); 
+}
+
+#undef $$
+#undef yytext
+
+union Object Action303 = { .Action.type = Action, .Action.value = " $$ = newCharacterClass(yytext); ", .Action.function = Action303_function };
+union Object Sequence304 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence302, .Binary.rightExpression = &Action303 };
+union Object Definition305 = { .Definition.type = Definition, .Definition.name = &String287, .Definition.rule = &Sequence304 };
+
+union Object String306 = { .String.type = String, .String.value = "range" };
+union Object Identifier307 = { .Identifier.type = Identifier, .Identifier.value = "char" };
+union Object String308 = { .String.type = String, .String.value = "-" };
+union Object Sequence309 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Identifier307, .Binary.rightExpression = &String308 };
 union Object Identifier310 = { .Identifier.type = Identifier, .Identifier.value = "char" };
-union Object Alternation311 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence309, .Binary.rightExpression = &Identifier310 };
-union Object Definition312 = { .Definition.type = Definition, .Definition.name = &String304, .Definition.rule = &Alternation311 };
+union Object Sequence311 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence309, .Binary.rightExpression = &Identifier310 };
+union Object Identifier312 = { .Identifier.type = Identifier, .Identifier.value = "char" };
+union Object Alternation313 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence311, .Binary.rightExpression = &Identifier312 };
+union Object Definition314 = { .Definition.type = Definition, .Definition.name = &String306, .Definition.rule = &Alternation313 };
 
-union Object String313 = { .String.type = String, .String.value = "char" };
-union Object String314 = { .String.type = String, .String.value = "\\\\" };
-union Object CharacterClass315 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "abefnrtv\'\"\\[\\]\\\\" };
-union Object Sequence316 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String314, .Binary.rightExpression = &CharacterClass315 };
-union Object String317 = { .String.type = String, .String.value = "\\\\" };
-union Object CharacterClass318 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "0-3" };
-union Object Sequence319 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String317, .Binary.rightExpression = &CharacterClass318 };
-union Object CharacterClass320 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "0-7" };
-union Object Sequence321 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence319, .Binary.rightExpression = &CharacterClass320 };
+union Object String315 = { .String.type = String, .String.value = "char" };
+union Object String316 = { .String.type = String, .String.value = "\\\\" };
+union Object CharacterClass317 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "abefnrtv\'\"\\[\\]\\\\" };
+union Object Sequence318 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String316, .Binary.rightExpression = &CharacterClass317 };
+union Object String319 = { .String.type = String, .String.value = "\\\\" };
+union Object CharacterClass320 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "0-3" };
+union Object Sequence321 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String319, .Binary.rightExpression = &CharacterClass320 };
 union Object CharacterClass322 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "0-7" };
 union Object Sequence323 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence321, .Binary.rightExpression = &CharacterClass322 };
-union Object Alternation324 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence316, .Binary.rightExpression = &Sequence323 };
-union Object String325 = { .String.type = String, .String.value = "\\\\" };
-union Object CharacterClass326 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "0-7" };
-union Object Sequence327 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String325, .Binary.rightExpression = &CharacterClass326 };
+union Object CharacterClass324 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "0-7" };
+union Object Sequence325 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence323, .Binary.rightExpression = &CharacterClass324 };
+union Object Alternation326 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence318, .Binary.rightExpression = &Sequence325 };
+union Object String327 = { .String.type = String, .String.value = "\\\\" };
 union Object CharacterClass328 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "0-7" };
-union Object Optional329 = { .Unary.type = Unary, .Unary.op = Optional, .Unary.expression = &CharacterClass328 };
-union Object Sequence330 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence327, .Binary.rightExpression = &Optional329 };
-union Object Alternation331 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation324, .Binary.rightExpression = &Sequence330 };
-union Object String332 = { .String.type = String, .String.value = "\\\\" };
-union Object Not333 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &String332 };
-union Object Dot334 = { .Dot.type = Dot };
-union Object Sequence335 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Not333, .Binary.rightExpression = &Dot334 };
-union Object Alternation336 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation331, .Binary.rightExpression = &Sequence335 };
-union Object Definition337 = { .Definition.type = Definition, .Definition.name = &String313, .Definition.rule = &Alternation336 };
+union Object Sequence329 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String327, .Binary.rightExpression = &CharacterClass328 };
+union Object CharacterClass330 = { .CharacterClass.type = CharacterClass, .CharacterClass.value = "0-7" };
+union Object Optional331 = { .Unary.type = Unary, .Unary.op = Optional, .Unary.expression = &CharacterClass330 };
+union Object Sequence332 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence329, .Binary.rightExpression = &Optional331 };
+union Object Alternation333 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation326, .Binary.rightExpression = &Sequence332 };
+union Object String334 = { .String.type = String, .String.value = "\\\\" };
+union Object Not335 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &String334 };
+union Object Dot336 = { .Dot.type = Dot };
+union Object Sequence337 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Not335, .Binary.rightExpression = &Dot336 };
+union Object Alternation338 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation333, .Binary.rightExpression = &Sequence337 };
+union Object Definition339 = { .Definition.type = Definition, .Definition.name = &String315, .Definition.rule = &Alternation338 };
 
-union Object String338 = { .String.type = String, .String.value = "action" };
-union Object String339 = { .String.type = String, .String.value = "{" };
-union Object Begin340 = { .Begin.type = Begin };
-union Object Sequence341 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String339, .Binary.rightExpression = &Begin340 };
-union Object Identifier342 = { .Identifier.type = Identifier, .Identifier.value = "braces" };
-union Object Star343 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Identifier342 };
-union Object Sequence344 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence341, .Binary.rightExpression = &Star343 };
-union Object End345 = { .End.type = End };
-union Object Sequence346 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence344, .Binary.rightExpression = &End345 };
-union Object String347 = { .String.type = String, .String.value = "}" };
-union Object Sequence348 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence346, .Binary.rightExpression = &String347 };
-union Object Identifier349 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence350 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence348, .Binary.rightExpression = &Identifier349 };
-union Object Action351 = { .Action.type = Action, .Action.value = " $$ = newAction(yytext); " };
-union Object Sequence352 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence350, .Binary.rightExpression = &Action351 };
-union Object Definition353 = { .Definition.type = Definition, .Definition.name = &String338, .Definition.rule = &Sequence352 };
+union Object String340 = { .String.type = String, .String.value = "action" };
+union Object String341 = { .String.type = String, .String.value = "{" };
+union Object Begin342 = { .Begin.type = Begin };
+union Object Sequence343 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String341, .Binary.rightExpression = &Begin342 };
+union Object Identifier344 = { .Identifier.type = Identifier, .Identifier.value = "braces" };
+union Object Star345 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Identifier344 };
+union Object Sequence346 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence343, .Binary.rightExpression = &Star345 };
+union Object End347 = { .End.type = End };
+union Object Sequence348 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence346, .Binary.rightExpression = &End347 };
+union Object String349 = { .String.type = String, .String.value = "}" };
+union Object Sequence350 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence348, .Binary.rightExpression = &String349 };
+union Object Identifier351 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence352 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence350, .Binary.rightExpression = &Identifier351 };
 
-union Object String354 = { .String.type = String, .String.value = "braces" };
-union Object String355 = { .String.type = String, .String.value = "{" };
-union Object Identifier356 = { .Identifier.type = Identifier, .Identifier.value = "braces" };
-union Object Star357 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Identifier356 };
-union Object Sequence358 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String355, .Binary.rightExpression = &Star357 };
-union Object String359 = { .String.type = String, .String.value = "}" };
-union Object Sequence360 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence358, .Binary.rightExpression = &String359 };
+#define $$ ctx->returnValue
+#define yytext ctx->input
+
+void Action353_function(Context *ctx) {
+	 $$ = newAction(yytext, NULL); 
+}
+
+#undef $$
+#undef yytext
+
+union Object Action353 = { .Action.type = Action, .Action.value = " $$ = newAction(yytext, NULL); ", .Action.function = Action353_function };
+union Object Sequence354 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence352, .Binary.rightExpression = &Action353 };
+union Object Definition355 = { .Definition.type = Definition, .Definition.name = &String340, .Definition.rule = &Sequence354 };
+
+union Object String356 = { .String.type = String, .String.value = "braces" };
+union Object String357 = { .String.type = String, .String.value = "{" };
+union Object Identifier358 = { .Identifier.type = Identifier, .Identifier.value = "braces" };
+union Object Star359 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Identifier358 };
+union Object Sequence360 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String357, .Binary.rightExpression = &Star359 };
 union Object String361 = { .String.type = String, .String.value = "}" };
-union Object Not362 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &String361 };
-union Object Dot363 = { .Dot.type = Dot };
-union Object Sequence364 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Not362, .Binary.rightExpression = &Dot363 };
-union Object Alternation365 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence360, .Binary.rightExpression = &Sequence364 };
-union Object Definition366 = { .Definition.type = Definition, .Definition.name = &String354, .Definition.rule = &Alternation365 };
+union Object Sequence362 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence360, .Binary.rightExpression = &String361 };
+union Object String363 = { .String.type = String, .String.value = "}" };
+union Object Not364 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &String363 };
+union Object Dot365 = { .Dot.type = Dot };
+union Object Sequence366 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Not364, .Binary.rightExpression = &Dot365 };
+union Object Alternation367 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Sequence362, .Binary.rightExpression = &Sequence366 };
+union Object Definition368 = { .Definition.type = Definition, .Definition.name = &String356, .Definition.rule = &Alternation367 };
 
-union Object String367 = { .String.type = String, .String.value = "EQUAL" };
-union Object String368 = { .String.type = String, .String.value = "=" };
-union Object Identifier369 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence370 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String368, .Binary.rightExpression = &Identifier369 };
-union Object Definition371 = { .Definition.type = Definition, .Definition.name = &String367, .Definition.rule = &Sequence370 };
+union Object String369 = { .String.type = String, .String.value = "EQUAL" };
+union Object String370 = { .String.type = String, .String.value = "=" };
+union Object Identifier371 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence372 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String370, .Binary.rightExpression = &Identifier371 };
+union Object Definition373 = { .Definition.type = Definition, .Definition.name = &String369, .Definition.rule = &Sequence372 };
 
-union Object String372 = { .String.type = String, .String.value = "COLON" };
-union Object String373 = { .String.type = String, .String.value = ":" };
-union Object Identifier374 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence375 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String373, .Binary.rightExpression = &Identifier374 };
-union Object Definition376 = { .Definition.type = Definition, .Definition.name = &String372, .Definition.rule = &Sequence375 };
+union Object String374 = { .String.type = String, .String.value = "COLON" };
+union Object String375 = { .String.type = String, .String.value = ":" };
+union Object Identifier376 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence377 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String375, .Binary.rightExpression = &Identifier376 };
+union Object Definition378 = { .Definition.type = Definition, .Definition.name = &String374, .Definition.rule = &Sequence377 };
 
-union Object String377 = { .String.type = String, .String.value = "SEMICOLON" };
-union Object String378 = { .String.type = String, .String.value = ";" };
-union Object Identifier379 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence380 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String378, .Binary.rightExpression = &Identifier379 };
-union Object Definition381 = { .Definition.type = Definition, .Definition.name = &String377, .Definition.rule = &Sequence380 };
+union Object String379 = { .String.type = String, .String.value = "SEMICOLON" };
+union Object String380 = { .String.type = String, .String.value = ";" };
+union Object Identifier381 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence382 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String380, .Binary.rightExpression = &Identifier381 };
+union Object Definition383 = { .Definition.type = Definition, .Definition.name = &String379, .Definition.rule = &Sequence382 };
 
-union Object String382 = { .String.type = String, .String.value = "BAR" };
-union Object String383 = { .String.type = String, .String.value = "|" };
-union Object Identifier384 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence385 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String383, .Binary.rightExpression = &Identifier384 };
-union Object Definition386 = { .Definition.type = Definition, .Definition.name = &String382, .Definition.rule = &Sequence385 };
+union Object String384 = { .String.type = String, .String.value = "BAR" };
+union Object String385 = { .String.type = String, .String.value = "|" };
+union Object Identifier386 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence387 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String385, .Binary.rightExpression = &Identifier386 };
+union Object Definition388 = { .Definition.type = Definition, .Definition.name = &String384, .Definition.rule = &Sequence387 };
 
-union Object String387 = { .String.type = String, .String.value = "AND" };
-union Object String388 = { .String.type = String, .String.value = "&" };
-union Object Identifier389 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence390 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String388, .Binary.rightExpression = &Identifier389 };
-union Object Definition391 = { .Definition.type = Definition, .Definition.name = &String387, .Definition.rule = &Sequence390 };
+union Object String389 = { .String.type = String, .String.value = "AND" };
+union Object String390 = { .String.type = String, .String.value = "&" };
+union Object Identifier391 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence392 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String390, .Binary.rightExpression = &Identifier391 };
+union Object Definition393 = { .Definition.type = Definition, .Definition.name = &String389, .Definition.rule = &Sequence392 };
 
-union Object String392 = { .String.type = String, .String.value = "NOT" };
-union Object String393 = { .String.type = String, .String.value = "!" };
-union Object Identifier394 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence395 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String393, .Binary.rightExpression = &Identifier394 };
-union Object Definition396 = { .Definition.type = Definition, .Definition.name = &String392, .Definition.rule = &Sequence395 };
+union Object String394 = { .String.type = String, .String.value = "NOT" };
+union Object String395 = { .String.type = String, .String.value = "!" };
+union Object Identifier396 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence397 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String395, .Binary.rightExpression = &Identifier396 };
+union Object Definition398 = { .Definition.type = Definition, .Definition.name = &String394, .Definition.rule = &Sequence397 };
 
-union Object String397 = { .String.type = String, .String.value = "QUERY" };
-union Object String398 = { .String.type = String, .String.value = "?" };
-union Object Identifier399 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence400 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String398, .Binary.rightExpression = &Identifier399 };
-union Object Definition401 = { .Definition.type = Definition, .Definition.name = &String397, .Definition.rule = &Sequence400 };
+union Object String399 = { .String.type = String, .String.value = "QUERY" };
+union Object String400 = { .String.type = String, .String.value = "?" };
+union Object Identifier401 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence402 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String400, .Binary.rightExpression = &Identifier401 };
+union Object Definition403 = { .Definition.type = Definition, .Definition.name = &String399, .Definition.rule = &Sequence402 };
 
-union Object String402 = { .String.type = String, .String.value = "STAR" };
-union Object String403 = { .String.type = String, .String.value = "*" };
-union Object Identifier404 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence405 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String403, .Binary.rightExpression = &Identifier404 };
-union Object Definition406 = { .Definition.type = Definition, .Definition.name = &String402, .Definition.rule = &Sequence405 };
+union Object String404 = { .String.type = String, .String.value = "STAR" };
+union Object String405 = { .String.type = String, .String.value = "*" };
+union Object Identifier406 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence407 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String405, .Binary.rightExpression = &Identifier406 };
+union Object Definition408 = { .Definition.type = Definition, .Definition.name = &String404, .Definition.rule = &Sequence407 };
 
-union Object String407 = { .String.type = String, .String.value = "PLUS" };
-union Object String408 = { .String.type = String, .String.value = "+" };
-union Object Identifier409 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence410 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String408, .Binary.rightExpression = &Identifier409 };
-union Object Definition411 = { .Definition.type = Definition, .Definition.name = &String407, .Definition.rule = &Sequence410 };
+union Object String409 = { .String.type = String, .String.value = "PLUS" };
+union Object String410 = { .String.type = String, .String.value = "+" };
+union Object Identifier411 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence412 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String410, .Binary.rightExpression = &Identifier411 };
+union Object Definition413 = { .Definition.type = Definition, .Definition.name = &String409, .Definition.rule = &Sequence412 };
 
-union Object String412 = { .String.type = String, .String.value = "OPEN" };
-union Object String413 = { .String.type = String, .String.value = "(" };
-union Object Identifier414 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence415 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String413, .Binary.rightExpression = &Identifier414 };
-union Object Definition416 = { .Definition.type = Definition, .Definition.name = &String412, .Definition.rule = &Sequence415 };
+union Object String414 = { .String.type = String, .String.value = "OPEN" };
+union Object String415 = { .String.type = String, .String.value = "(" };
+union Object Identifier416 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence417 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String415, .Binary.rightExpression = &Identifier416 };
+union Object Definition418 = { .Definition.type = Definition, .Definition.name = &String414, .Definition.rule = &Sequence417 };
 
-union Object String417 = { .String.type = String, .String.value = "CLOSE" };
-union Object String418 = { .String.type = String, .String.value = ")" };
-union Object Identifier419 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence420 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String418, .Binary.rightExpression = &Identifier419 };
-union Object Definition421 = { .Definition.type = Definition, .Definition.name = &String417, .Definition.rule = &Sequence420 };
+union Object String419 = { .String.type = String, .String.value = "CLOSE" };
+union Object String420 = { .String.type = String, .String.value = ")" };
+union Object Identifier421 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence422 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String420, .Binary.rightExpression = &Identifier421 };
+union Object Definition423 = { .Definition.type = Definition, .Definition.name = &String419, .Definition.rule = &Sequence422 };
 
-union Object String422 = { .String.type = String, .String.value = "DOT" };
-union Object String423 = { .String.type = String, .String.value = "." };
-union Object Identifier424 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence425 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String423, .Binary.rightExpression = &Identifier424 };
-union Object Definition426 = { .Definition.type = Definition, .Definition.name = &String422, .Definition.rule = &Sequence425 };
+union Object String424 = { .String.type = String, .String.value = "DOT" };
+union Object String425 = { .String.type = String, .String.value = "." };
+union Object Identifier426 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence427 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String425, .Binary.rightExpression = &Identifier426 };
+union Object Definition428 = { .Definition.type = Definition, .Definition.name = &String424, .Definition.rule = &Sequence427 };
 
-union Object String427 = { .String.type = String, .String.value = "BEGIN" };
-union Object String428 = { .String.type = String, .String.value = "<" };
-union Object Identifier429 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence430 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String428, .Binary.rightExpression = &Identifier429 };
-union Object Definition431 = { .Definition.type = Definition, .Definition.name = &String427, .Definition.rule = &Sequence430 };
+union Object String429 = { .String.type = String, .String.value = "BEGIN" };
+union Object String430 = { .String.type = String, .String.value = "<" };
+union Object Identifier431 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence432 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String430, .Binary.rightExpression = &Identifier431 };
+union Object Definition433 = { .Definition.type = Definition, .Definition.name = &String429, .Definition.rule = &Sequence432 };
 
-union Object String432 = { .String.type = String, .String.value = "END" };
-union Object String433 = { .String.type = String, .String.value = ">" };
-union Object Identifier434 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence435 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String433, .Binary.rightExpression = &Identifier434 };
-union Object Definition436 = { .Definition.type = Definition, .Definition.name = &String432, .Definition.rule = &Sequence435 };
+union Object String434 = { .String.type = String, .String.value = "END" };
+union Object String435 = { .String.type = String, .String.value = ">" };
+union Object Identifier436 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence437 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String435, .Binary.rightExpression = &Identifier436 };
+union Object Definition438 = { .Definition.type = Definition, .Definition.name = &String434, .Definition.rule = &Sequence437 };
 
-union Object String437 = { .String.type = String, .String.value = "TILDE" };
-union Object String438 = { .String.type = String, .String.value = "~" };
-union Object Identifier439 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence440 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String438, .Binary.rightExpression = &Identifier439 };
-union Object Definition441 = { .Definition.type = Definition, .Definition.name = &String437, .Definition.rule = &Sequence440 };
+union Object String439 = { .String.type = String, .String.value = "TILDE" };
+union Object String440 = { .String.type = String, .String.value = "~" };
+union Object Identifier441 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence442 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String440, .Binary.rightExpression = &Identifier441 };
+union Object Definition443 = { .Definition.type = Definition, .Definition.name = &String439, .Definition.rule = &Sequence442 };
 
-union Object String442 = { .String.type = String, .String.value = "RPERCENT" };
-union Object String443 = { .String.type = String, .String.value = "%}" };
-union Object Identifier444 = { .Identifier.type = Identifier, .Identifier.value = "-" };
-union Object Sequence445 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String443, .Binary.rightExpression = &Identifier444 };
-union Object Definition446 = { .Definition.type = Definition, .Definition.name = &String442, .Definition.rule = &Sequence445 };
+union Object String444 = { .String.type = String, .String.value = "RPERCENT" };
+union Object String445 = { .String.type = String, .String.value = "%}" };
+union Object Identifier446 = { .Identifier.type = Identifier, .Identifier.value = "-" };
+union Object Sequence447 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String445, .Binary.rightExpression = &Identifier446 };
+union Object Definition448 = { .Definition.type = Definition, .Definition.name = &String444, .Definition.rule = &Sequence447 };
 
-union Object String447 = { .String.type = String, .String.value = "-" };
-union Object Identifier448 = { .Identifier.type = Identifier, .Identifier.value = "space" };
-union Object Identifier449 = { .Identifier.type = Identifier, .Identifier.value = "comment" };
-union Object Alternation450 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Identifier448, .Binary.rightExpression = &Identifier449 };
-union Object Star451 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Alternation450 };
-union Object Definition452 = { .Definition.type = Definition, .Definition.name = &String447, .Definition.rule = &Star451 };
+union Object String449 = { .String.type = String, .String.value = "-" };
+union Object Identifier450 = { .Identifier.type = Identifier, .Identifier.value = "space" };
+union Object Identifier451 = { .Identifier.type = Identifier, .Identifier.value = "comment" };
+union Object Alternation452 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Identifier450, .Binary.rightExpression = &Identifier451 };
+union Object Star453 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Alternation452 };
+union Object Definition454 = { .Definition.type = Definition, .Definition.name = &String449, .Definition.rule = &Star453 };
 
-union Object String453 = { .String.type = String, .String.value = "space" };
-union Object String454 = { .String.type = String, .String.value = " " };
-union Object String455 = { .String.type = String, .String.value = "\\t" };
-union Object Alternation456 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &String454, .Binary.rightExpression = &String455 };
-union Object Identifier457 = { .Identifier.type = Identifier, .Identifier.value = "end-of-line" };
-union Object Alternation458 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation456, .Binary.rightExpression = &Identifier457 };
-union Object Definition459 = { .Definition.type = Definition, .Definition.name = &String453, .Definition.rule = &Alternation458 };
+union Object String455 = { .String.type = String, .String.value = "space" };
+union Object String456 = { .String.type = String, .String.value = " " };
+union Object String457 = { .String.type = String, .String.value = "\\t" };
+union Object Alternation458 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &String456, .Binary.rightExpression = &String457 };
+union Object Identifier459 = { .Identifier.type = Identifier, .Identifier.value = "end-of-line" };
+union Object Alternation460 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation458, .Binary.rightExpression = &Identifier459 };
+union Object Definition461 = { .Definition.type = Definition, .Definition.name = &String455, .Definition.rule = &Alternation460 };
 
-union Object String460 = { .String.type = String, .String.value = "comment" };
-union Object String461 = { .String.type = String, .String.value = "#" };
-union Object Identifier462 = { .Identifier.type = Identifier, .Identifier.value = "end-of-line" };
-union Object Not463 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &Identifier462 };
-union Object Dot464 = { .Dot.type = Dot };
-union Object Sequence465 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Not463, .Binary.rightExpression = &Dot464 };
-union Object Star466 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Sequence465 };
-union Object Sequence467 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String461, .Binary.rightExpression = &Star466 };
-union Object Identifier468 = { .Identifier.type = Identifier, .Identifier.value = "end-of-line" };
-union Object Sequence469 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence467, .Binary.rightExpression = &Identifier468 };
-union Object Definition470 = { .Definition.type = Definition, .Definition.name = &String460, .Definition.rule = &Sequence469 };
+union Object String462 = { .String.type = String, .String.value = "comment" };
+union Object String463 = { .String.type = String, .String.value = "#" };
+union Object Identifier464 = { .Identifier.type = Identifier, .Identifier.value = "end-of-line" };
+union Object Not465 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &Identifier464 };
+union Object Dot466 = { .Dot.type = Dot };
+union Object Sequence467 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Not465, .Binary.rightExpression = &Dot466 };
+union Object Star468 = { .Unary.type = Unary, .Unary.op = Star, .Unary.expression = &Sequence467 };
+union Object Sequence469 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &String463, .Binary.rightExpression = &Star468 };
+union Object Identifier470 = { .Identifier.type = Identifier, .Identifier.value = "end-of-line" };
+union Object Sequence471 = { .Binary.type = Binary, .Binary.op = Sequence, .Binary.leftExpression = &Sequence469, .Binary.rightExpression = &Identifier470 };
+union Object Definition472 = { .Definition.type = Definition, .Definition.name = &String462, .Definition.rule = &Sequence471 };
 
-union Object String471 = { .String.type = String, .String.value = "end-of-line" };
-union Object String472 = { .String.type = String, .String.value = "\\r\\n" };
-union Object String473 = { .String.type = String, .String.value = "\\n" };
-union Object Alternation474 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &String472, .Binary.rightExpression = &String473 };
-union Object String475 = { .String.type = String, .String.value = "\\r" };
-union Object Alternation476 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation474, .Binary.rightExpression = &String475 };
-union Object Definition477 = { .Definition.type = Definition, .Definition.name = &String471, .Definition.rule = &Alternation476 };
+union Object String473 = { .String.type = String, .String.value = "end-of-line" };
+union Object String474 = { .String.type = String, .String.value = "\\r\\n" };
+union Object String475 = { .String.type = String, .String.value = "\\n" };
+union Object Alternation476 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &String474, .Binary.rightExpression = &String475 };
+union Object String477 = { .String.type = String, .String.value = "\\r" };
+union Object Alternation478 = { .Binary.type = Binary, .Binary.op = Alternation, .Binary.leftExpression = &Alternation476, .Binary.rightExpression = &String477 };
+union Object Definition479 = { .Definition.type = Definition, .Definition.name = &String473, .Definition.rule = &Alternation478 };
 
-union Object String478 = { .String.type = String, .String.value = "end-of-file" };
-union Object Dot479 = { .Dot.type = Dot };
-union Object Not480 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &Dot479 };
-union Object Definition481 = { .Definition.type = Definition, .Definition.name = &String478, .Definition.rule = &Not480 };
+union Object String480 = { .String.type = String, .String.value = "end-of-file" };
+union Object Dot481 = { .Dot.type = Dot };
+union Object Not482 = { .Unary.type = Unary, .Unary.op = Not, .Unary.expression = &Dot481 };
+union Object Definition483 = { .Definition.type = Definition, .Definition.name = &String480, .Definition.rule = &Not482 };
 
-List definitions = { .size = 42, .used = 40, .data = { &Definition23, &Definition26, &Definition41, &Definition51, &Definition67, &Definition83, &Definition97, &Definition109, &Definition136, &Definition156, &Definition221, &Definition235, &Definition249, &Definition284, &Definition303, &Definition312, &Definition337, &Definition353, &Definition366, &Definition371, &Definition376, &Definition381, &Definition386, &Definition391, &Definition396, &Definition401, &Definition406, &Definition411, &Definition416, &Definition421, &Definition426, &Definition431, &Definition436, &Definition441, &Definition446, &Definition452, &Definition459, &Definition470, &Definition477, &Definition481, } };
+List definitions = { .size = 42, .used = 40, .data = { &Definition23, &Definition26, &Definition41, &Definition51, &Definition67, &Definition83, &Definition97, &Definition109, &Definition136, &Definition156, &Definition221, &Definition235, &Definition249, &Definition286, &Definition305, &Definition314, &Definition339, &Definition355, &Definition368, &Definition373, &Definition378, &Definition383, &Definition388, &Definition393, &Definition398, &Definition403, &Definition408, &Definition413, &Definition418, &Definition423, &Definition428, &Definition433, &Definition438, &Definition443, &Definition448, &Definition454, &Definition461, &Definition472, &Definition479, &Definition483, } };
 
 union Object grammar = { .Grammar.type = Grammar, .Grammar.definitions = &definitions };
 

@@ -332,7 +332,7 @@ YY_ACTION(void) yy_1_action(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_action\n"));
   {
 #line 85
-   __ = newAction(yytext); ;
+   __ = newAction(yytext, NULL); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -347,6 +347,20 @@ YY_ACTION(void) yy_1_class(yycontext *yy, char *yytext, int yyleng)
   {
 #line 76
    __ = newCharacterClass(yytext); ;
+  }
+#undef yythunkpos
+#undef yypos
+#undef yy
+}
+YY_ACTION(void) yy_2_literal(yycontext *yy, char *yytext, int yyleng)
+{
+#define __ yy->__
+#define yypos yy->__pos
+#define yythunkpos yy->__thunkpos
+  yyprintf((stderr, "do yy_2_literal\n"));
+  {
+#line 74
+   __ = newString(yytext); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -633,7 +647,7 @@ YY_ACTION(void) yy_1_primary(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_primary\n"));
   {
 #line 59
-   __ = newAssignment(i1, i2) ;
+   __ = newAssignment(i1, i2); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1111,7 +1125,7 @@ if (!(YY_BEGIN)) goto l37;
 if (!(YY_END)) goto l37;
 #undef yytext
 #undef yyleng
-  }  if (!yymatchClass(yy, (unsigned char *)"\000\000\000\000\004\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l37;  if (!yy__(yy)) goto l37;
+  }  if (!yymatchClass(yy, (unsigned char *)"\000\000\000\000\004\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000")) goto l37;  if (!yy__(yy)) goto l37;  yyDo(yy, yy_2_literal, yy->__begin, yy->__end);
   }
   l38:;	
   yyprintf((stderr, "  ok   %s @ %s\n", "literal", yy->__buf+yy->__pos));

@@ -9,16 +9,19 @@ grammar_c = custom_target(
 common_src = files([
   'list.c',
   'grammar_objects.c',
+  'wonkyregex.c',
 ])
 
 grammar = executable(
   'grammar',
   common_src + [grammar_c],
+  link_args: '-lpcre2-8',
 )
 
 test_get_tree = executable(
   'test_get_tree',
-  common_src + ['test_get_tree.c', 'grammar_get_tree.c']
+  common_src + ['test_get_tree.c', 'grammar_get_tree.c'],
+  link_args: '-lpcre2-8',
 )
 
 thing = custom_target(
