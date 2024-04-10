@@ -45,7 +45,7 @@ thing = custom_target(
   'thing',
   command: [grammar],
   feed: true,
-  input: ['grammar.leg'],
+  input: ['raw.leg'],
   capture: true,
   output: 'thing',
 )
