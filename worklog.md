@@ -3,7 +3,7 @@
 - [x] ~~Makefile~~ Mason for everything
         - [x] Merci Nam
 
-- [ ] Redo tests
+- [x] Redo tests (kinda)
 
 # 2024-04-09
 

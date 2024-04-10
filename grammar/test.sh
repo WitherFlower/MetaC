@@ -1,3 +1,5 @@
+grammar < raw.leg
+
 meson compile thing -C ../builddir
 meson compile thing2 -C ../builddir
 
