@@ -20,6 +20,15 @@ grammar = executable(
   dependencies: [pcre2]
 )
 
+# TODO: FAIRE MARCHER CE TRUC
+# grammar_get_tree_c = custom_target(
+#   'grammar_get_tree_c',
+#   command: [grammar],
+#   input: ['raw.leg'],
+#   output: ['grammar_get_tree.c'],
+#   feed: true,
+# )
+
 test_get_tree = executable(
   'test_get_tree',
   common_src + ['test_get_tree.c', 'grammar_get_tree.c'],
@@ -48,10 +57,10 @@ thing2 = custom_target(
   output: 'thing2',
 )
 
-diff = custom_target(
-  'diff',
-  command: ['diff', '@INPUT@'],
-  input: [thing, thing2],
-  capture: true,
-  output: 'diff',
-)
+# diff = custom_target(
+#   'diff',
+#   command: ['diff', '@INPUT@'],
+#   input: [thing, thing2],
+#   capture: true,
+#   output: 'diff',
+# )
