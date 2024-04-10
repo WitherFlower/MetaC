@@ -1,11 +1,14 @@
+# 2024-04-10
+
+- [x] ~~Makefile~~ Mason for everything
+        - [x] Merci Nam
+
+- [ ] Redo tests
+
 # 2024-04-09
 
 - [x] Debugging
 - [x] Regex madness
-
-- [ ] ~~Makefile~~ Mason for everything
-        - [ ] Merci Nam
-
 
 # 2024-04-08
 

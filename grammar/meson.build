@@ -17,13 +17,19 @@ common_src = files([
 grammar = executable(
   'grammar',
   common_src + [grammar_c],
-   dependencies: [pcre2]
+  dependencies: [pcre2]
 )
 
 test_get_tree = executable(
   'test_get_tree',
   common_src + ['test_get_tree.c', 'grammar_get_tree.c'],
-   dependencies: [pcre2]
+  dependencies: [pcre2]
+)
+
+exec_tree = executable(
+  'exec_tree',
+  common_src + ['exec_tree.c', 'grammar_get_tree.c'],
+  dependencies: [pcre2],
 )
 
 thing = custom_target(
