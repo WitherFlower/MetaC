@@ -14,6 +14,8 @@ typedef struct Pair {
 
 Pair *newPair(char* key, void *value);
 
+Dict *newDict();
+
 void set(Dict *dict, char *key, void *value); 
 
 void *get(Dict *dict, char *key); 

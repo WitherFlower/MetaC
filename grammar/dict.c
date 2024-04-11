@@ -12,6 +12,12 @@ Pair *newPair(char* key, void *value) {
     return p;
 }
 
+Dict *newDict() {
+    Dict *d = malloc(sizeof(Dict));
+    d->pairs = newList(10);
+    return d;
+}
+
 void set(Dict *dict, char *key, void *value) {
     for (int i = 0; i < dict->pairs->used; i++) {
 
@@ -32,7 +38,7 @@ void *get(Dict *dict, char *key) {
             return ((Pair*)dict->pairs->data[i])->value;
         }
     }
-    printf("Could not find value with key %s", key);
+    // printf("Could not find value with key %s", key);
     return NULL;
 }
 
