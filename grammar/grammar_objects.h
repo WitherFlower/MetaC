@@ -2,17 +2,11 @@
 #define GRAMMAR_OBJECTS_H
 
 #include <stdlib.h>
+#include "list.h"
 
 union Object;
 
 typedef union Object *oop;
-
-typedef struct 
-{
-    size_t size;
-    size_t used; 
-    oop data[];
-} List;
 
 typedef struct {
     List *varNames;

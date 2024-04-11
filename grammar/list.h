@@ -1,25 +1,31 @@
 #include <stdlib.h>
-#include "grammar_objects.h"
 
 #ifndef LIST_H
 #define LIST_H
 
+typedef struct 
+{
+    size_t size;
+    size_t used; 
+    void **data;
+} List;
+
 List *newList(int size);
 
-List *addsize(List *list, size_t inc);
+void addsize(List *list, size_t inc);
 
-List *push(List *list, oop object);
+void push(List *list, void *object);
 
-List *insertAt(List *list, unsigned int index, oop object);
+void insertAt(List *list, unsigned int index, void *object);
 
 /*
  * Finds the index of a given object in the list
  * Implies the list is sorted by pointer value
  */
-int indexOf(List *list, oop object); 
+int indexOf(List *list, void *object); 
 
-List *insertSorted(List *list, oop object);
+void insertSorted(List *list, void *object);
 
-int indexOfByValue(List *list, oop object);
+int indexOfByValue(List *list, void *object);
 
 #endif

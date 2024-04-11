@@ -8,15 +8,16 @@
 
 List *newList(int size) {
     
-    List* list = malloc(sizeof(List) + size * sizeof(oop*));
+    List* list = malloc(sizeof(List));
 
     list->size = size;
     list->used = 0;
+    list->data = calloc(sizeof(void*), size);
     
     return list;
 }
 
-List *addsize(List *list, size_t inc) {
+void addsize(List *list, size_t inc) {
     size_t newsize = 0;
     size_t newused = 0;
     
@@ -25,45 +26,38 @@ List *addsize(List *list, size_t inc) {
         newused = list -> used;
     }
 
-    list = realloc(list, sizeof(*list) + newsize * sizeof(oop*));
+    list->data = realloc(list->data, newsize * sizeof(void*));
 
-    if(list) {
+    if(list->data) {
         list -> size = newsize;
         list -> used = newused;
     }
-
-    return list;
 }
 
-List *push(List *list, oop object) {
+void push(List *list, void *object) {
     
     if (list->size == list->used) {
-        List *new_list = addsize(list, 32);
-        new_list->data[new_list->used] = object;
-        new_list->used += 1;
-        return new_list;
+        addsize(list, 32);
+        list->data[list->used] = object;
+        list->used += 1;
 
     } else {
         list->data[list->used] = object;
         list->used += 1;
-        return list;
 
     }
 }
 
-List *insertAt(List *list, unsigned int index, oop object) {
+void insertAt(List *list, unsigned int index, void *object) {
     
     if (list->size == list->used) {
-        list = addsize(list, 32);
+        addsize(list, 32);
     }
 
-    memmove(list->data + index + 1, list->data + index, (list->used - index) * sizeof(oop));
+    memmove(list->data + index + 1, list->data + index, (list->used - index) * sizeof(void*));
 
     list->data[index] = object;
     list->used += 1;
-
-    return list;
-
 }
 
 /*
@@ -71,7 +65,7 @@ List *insertAt(List *list, unsigned int index, oop object) {
  *
  * Implies the list is sorted by pointer value
  */
-int indexOf(List *list, oop object) {
+int indexOf(List *list, void *object) {
 
     if (list->used == 0) return -1;
 
@@ -112,9 +106,11 @@ int indexOf(List *list, oop object) {
     return low;
 }
 
-List *insertSorted(List *list, oop object) {
+void insertSorted(List *list, void *object) {
 
-    if (list->used == 0) return push(list, object);
+    if (list->used == 0) {
+        return push(list, object);
+    }
 
     int low = 0;
     int high = list->used-1;
@@ -156,13 +152,13 @@ List *insertSorted(List *list, oop object) {
     }
 }
 
-int indexOfByValue(List *list, oop object) {
+int indexOfByValue(List *list, void *object) {
     
-    for (int i = 0; i < list->used; i++) {
-        if (objectEquals(object, list->data[i])) {
-            return i;
-        }
-    }
+    // for (int i = 0; i < list->used; i++) {
+    //     if (objectEquals(object, list->data[i])) {
+    //         return i;
+    //     }
+    // }
 
     return -1;
 }
