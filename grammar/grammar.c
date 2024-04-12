@@ -902,7 +902,7 @@ YY_ACTION(void) yy_2_grammar(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_2_grammar\n"));
   {
 #line 15
-   printTree(r); /* writeTree(r); */;
+   printTree(r); writeTree(r); ;
   }
 #undef yythunkpos
 #undef yypos

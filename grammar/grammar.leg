@@ -12,7 +12,7 @@
 grammar =       - r:root
                ( declaration | d:definition { getMethod(r, "addRuleDefinition")(r, d); } )+
                trailer? end-of-file
-               { printTree(r); /* writeTree(r); */}
+               { printTree(r); writeTree(r); }
 
 root = { $$ = newGrammar(); }
 

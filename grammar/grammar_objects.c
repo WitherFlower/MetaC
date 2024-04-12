@@ -12,6 +12,8 @@
 #include "objects.h"
 #include "wonkyregex.h"
 
+/// Utils
+
 void fatal(char *format, ...) {
     va_list ap;
     va_start(ap, format);
@@ -20,6 +22,94 @@ void fatal(char *format, ...) {
     fprintf(stderr, "\n");
     va_end(ap);
     exit(1);
+}
+
+char *convertSpecialChars(char *sourceString) {
+    char *convertedString = malloc(sizeof(char) * 2 * strlen(sourceString));
+    convertedString[0] = 0;
+
+    for (int i = 0; i < strlen(sourceString); i++) {
+        
+        char current = sourceString[i];
+
+        switch (current) {
+
+            case '\'': { char currentString[] = { '\\', '\'', '\0' }; strcat(convertedString, currentString); break; }
+            case '\"': { char currentString[] = { '\\', '\"', '\0' }; strcat(convertedString, currentString); break; }
+            case '\\': { char currentString[] = { '\\', '\\', '\0' }; strcat(convertedString, currentString); break; }
+            case '\r': { char currentString[] = { '\\', 'r', '\0' }; strcat(convertedString, currentString); break; }
+            case '\t': { char currentString[] = { '\\', 't', '\0' }; strcat(convertedString, currentString); break; }
+            case '\n': { char currentString[] = { '\\', 'n', '\0' }; strcat(convertedString, currentString); break; }
+            default:   { char currentString[] = { current, '\0' }; strcat(convertedString, currentString); break; }
+        
+        }
+
+    }
+    return convertedString;
+}
+
+unsigned int getConvertedStringRealLength(char *string) {
+    int count = 0;
+    for (int i = 0; i < strlen(string); i++){
+        if(string[i] == '\\') {
+            i++;
+        }
+        count++;
+    }
+    return count;
+}
+
+typedef struct FileWriter {
+    char *filename;
+    char *actionSection;
+    char *declarationSection;
+} FileWriter;
+
+FileWriter *newFileWriter(char *filename) {
+    FileWriter *fw = malloc(sizeof(FileWriter));
+    fw->filename = filename;
+    fw->actionSection = calloc(sizeof(char), 1);
+    fw->declarationSection = calloc(sizeof(char), 1);
+    return fw;
+}
+
+void appendToActionSection(FileWriter *fileWriter, char *content) {
+    fileWriter->actionSection = realloc(
+            fileWriter->actionSection,
+            sizeof(char) * (strlen(fileWriter->actionSection) + strlen(content) + 1)
+            );
+    strcat(fileWriter->actionSection, content);
+}
+
+void appendToDeclarationSection(FileWriter *fileWriter, char *content) {
+    fileWriter->declarationSection = realloc(
+            fileWriter->declarationSection,
+            sizeof(char) * (strlen(fileWriter->declarationSection) + strlen(content) + 1)
+            );
+    strcat(fileWriter->declarationSection, content);
+}
+
+void writeToFile(FileWriter *fileWriter) {
+    FILE *fptr = fopen("grammar_get_tree.c", "w");
+    fprintf(fptr, "/// Actions\n\n%s\n", fileWriter->actionSection);
+    fprintf(fptr, "/// Declarations\n\n%s\n", fileWriter->declarationSection);
+    fclose(fptr);
+}
+
+void freeFileWriter(FileWriter *fileWriter) {
+    free(fileWriter->actionSection);
+    free(fileWriter->declarationSection);
+    free(fileWriter);
+}
+
+/// ---- Class declarations ----
+
+/// Grammar Class
+
+oop newGrammar() {
+    oop grammar = newObject("Grammar");
+    setProperty(grammar, "definitions", newList(10));
+    return grammar;
 }
 
 void addRuleDefinition(oop grammar, oop definition) {
@@ -34,6 +124,16 @@ Dict *getGrammarMethods() {
     return methods;
 }
 
+/// Definition Class
+
+oop newDefinition(oop name, oop rule) {
+    oop definition = newObject("Definition");
+    setProperty(definition, "name", name);
+    setProperty(definition, "rule", rule);
+
+    return definition;
+}
+
 void printDefinition(oop definition, int depth) {
     printf("%*s| %s (%s)\n", 2 * depth, "", definition->type,
             (char*)getProperty(getProperty(definition, "name"), "value"));
@@ -41,10 +141,54 @@ void printDefinition(oop definition, int depth) {
     getMethod(innerRule, "print")(innerRule, depth + 1);
 }
 
+char *writeDefinition(oop definition, FileWriter *fileWriter, int *declarationCount, List *localVars) {
+
+    oop name = getProperty(definition, "name");
+    char *nameVarName = getMethod(name, "write")(name, fileWriter, declarationCount, localVars);
+
+    List *l = newList(10);
+
+    oop rule = getProperty(definition, "rule");
+    char *ruleVarName = getMethod(rule, "write")(rule, fileWriter, declarationCount, l);
+
+    for (int i = 0; i < l->used; i++) {
+        free(l->data[i]);
+    }
+
+    free(l);
+
+    const char *type = definition->type;
+
+    (*declarationCount)++;
+
+    char *fullVariableName = malloc(sizeof(char) * 64);
+    sprintf(fullVariableName, "%s%d", type, *declarationCount);
+
+    char *outputString = malloc(
+            sizeof(char) * (64 + strlen(fullVariableName) + strlen(nameVarName) + strlen(ruleVarName)));
+    sprintf(outputString, "oop %s = newDefinition(%s, %s);\n",
+            fullVariableName, nameVarName, ruleVarName);
+    appendToDeclarationSection(fileWriter, outputString);
+
+    return fullVariableName;
+}
+
 Dict *getDefinitionMethods() {
     Dict *methods = newDict();
     set(methods, "print", printDefinition);
+    set(methods, "write", writeDefinition);
     return methods;
+}
+
+/// Assignment Class
+
+oop newAssignment(oop variableName, oop ruleIdentifier) {
+
+    oop assignment = newObject("Assignment");
+    setProperty(assignment, "variableName", variableName);
+    setProperty(assignment, "ruleIdentifier", ruleIdentifier);
+
+    return assignment;
 }
 
 void printAssignment(oop assignment, int depth) {
@@ -54,10 +198,76 @@ void printAssignment(oop assignment, int depth) {
     getMethod(innerExpression, "print")(innerExpression, depth + 1);
 }
 
+char *writeAssignment(oop assignment, FileWriter *fileWriter, int *declarationCount, List *localVars) {
+
+    oop assignedVariable = getProperty(assignment, "variableName");
+    char *assignedVariableName = getMethod(assignedVariable, "write")(
+            assignedVariable, fileWriter, declarationCount, localVars);
+
+    char *assignedVariableStringName = getProperty(assignedVariable, "value");
+    addNewStringToSymbolList(localVars, assignedVariableStringName);
+
+    oop ruleIdentifier = getProperty(assignment, "ruleIdentifier");
+    char *ruleIdentifierName = getMethod(ruleIdentifier, "write")(
+            ruleIdentifier, fileWriter, declarationCount, localVars);
+
+    const char *type = assignment->type;
+
+    (*declarationCount)++;
+
+    char *fullVariableName = malloc(sizeof(char) * 64);
+    sprintf(fullVariableName, "%s%d", type, *declarationCount);
+
+    char *outputString = malloc(
+            sizeof(char) * (64 + strlen(fullVariableName) + strlen(assignedVariableName) + strlen(ruleIdentifierName)));
+    sprintf(outputString, "oop %s = newAssignment(%s, %s);\n",
+            fullVariableName, assignedVariableName, ruleIdentifierName);
+    appendToDeclarationSection(fileWriter, outputString);
+
+    return fullVariableName;
+}
+
 Dict *getAssignmentMethods() {
     Dict *methods = newDict();
     set(methods, "print", printAssignment);
+    set(methods, "write", writeAssignment);
     return methods;
+}
+
+/// Generic Binary Class Methods
+
+char *writeBinary(oop binary, FileWriter *fileWriter, int *declarationCount, List *localVars) {
+    oop leftExpression = getProperty(binary, "leftExpression");
+    char *leftExpressionVarName = getMethod(leftExpression, "write")(
+            leftExpression, fileWriter, declarationCount, localVars);
+
+    oop rightExpression = getProperty(binary, "rightExpression");
+    char *rightExpressionVarName = getMethod(rightExpression, "write")(
+            rightExpression, fileWriter, declarationCount, localVars);
+    
+    const char *type = binary->type;
+
+    (*declarationCount)++;
+
+    char *fullVariableName = malloc(sizeof(char) * 64);
+    sprintf(fullVariableName, "%s%d", type, *declarationCount);
+
+    char *outputString = malloc(
+            sizeof(char) * (64 + strlen(fullVariableName) + strlen(leftExpressionVarName) + strlen(rightExpressionVarName)));
+    sprintf(outputString, "oop %s = new%s(%s, %s);\n",
+            fullVariableName, type, leftExpressionVarName, rightExpressionVarName);
+    appendToDeclarationSection(fileWriter, outputString);
+
+    return fullVariableName;
+}
+
+/// Sequence Class
+
+oop newSequence(oop leftExpression, oop rightExpression) {
+    oop sequence = newObject("Sequence");
+    setProperty(sequence, "leftExpression", leftExpression);
+    setProperty(sequence, "rightExpression", rightExpression);
+    return sequence;
 }
 
 void printSequence(oop sequence, int depth) {
@@ -78,7 +288,17 @@ void printSequence(oop sequence, int depth) {
 Dict *getSequenceMethods() {
     Dict *methods = newDict();
     set(methods, "print", printSequence);
+    set(methods, "write", writeBinary);
     return methods;
+}
+
+/// Alternation Class
+
+oop newAlternation(oop leftExpression, oop rightExpression) {
+    oop alternation = newObject("Alternation");
+    setProperty(alternation, "leftExpression", leftExpression);
+    setProperty(alternation, "rightExpression", rightExpression);
+    return alternation;
 }
 
 void printAlternation(oop alternation, int depth) {
@@ -99,8 +319,11 @@ void printAlternation(oop alternation, int depth) {
 Dict *getAlternationMethods() {
     Dict *methods = newDict();
     set(methods, "print", printAlternation);
+    set(methods, "write", writeBinary);
     return methods;
 }
+
+/// Generic Unary Class Methods
 
 void printUnary(oop unary, int depth) {
     printf(
@@ -113,84 +336,334 @@ void printUnary(oop unary, int depth) {
     getMethod(expression, "print")(expression, depth + 1);
 }
 
+char *writeUnary(oop unary, FileWriter *fileWriter, int *declarationCount, List *localVars) {
+    oop expression = getProperty(unary, "expression");
+    char *expressionVarName = getMethod(expression, "write")(
+            expression, fileWriter, declarationCount, localVars);
+
+    const char *type = unary->type;
+
+    (*declarationCount)++;
+
+    char *fullVariableName = malloc(sizeof(char) * 64);
+    sprintf(fullVariableName, "%s%d", type, *declarationCount);
+
+    char *outputString = malloc(
+            sizeof(char) * (64 + strlen(fullVariableName) + strlen(expressionVarName)));
+    sprintf(outputString, "oop %s = new%s(%s);\n",
+            fullVariableName, type, expressionVarName);
+    appendToDeclarationSection(fileWriter, outputString);
+
+    return fullVariableName;
+}
+
+/// Star Class
+
+oop newStar(oop expression) {
+    oop star = newObject("Star");
+    setProperty(star, "expression", expression);
+    return star;
+}
+
 Dict *getStarMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
+    set(methods, "write", writeUnary);
     return methods;
+}
+
+/// Plus Class
+
+oop newPlus(oop expression) {
+    oop plus = newObject("Plus");
+    setProperty(plus, "expression", expression);
+    return plus;
 }
 
 Dict *getPlusMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
+    set(methods, "write", writeUnary);
     return methods;
+}
+
+/// Optional Class
+
+oop newOptional(oop expression) {
+    oop optional = newObject("Optional");
+    setProperty(optional, "expression", expression);
+    return optional;
 }
 
 Dict *getOptionalMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
+    set(methods, "write", writeUnary);
     return methods;
+}
+
+/// And Class
+
+oop newAnd(oop expression) {
+    oop and = newObject("And");
+    setProperty(and, "expression", expression);
+    return and;
 }
 
 Dict *getAndMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
+    set(methods, "write", writeUnary);
     return methods;
+}
+
+/// Not Class
+
+oop newNot(oop expression) {
+    oop not = newObject("Not");
+    setProperty(not, "expression", expression);
+    return not;
 }
 
 Dict *getNotMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
+    set(methods, "write", writeUnary);
     return methods;
 }
+
+/// Generic Empty Leaf Class Methods
 
 void printEmptyLeaf(oop leaf, int depth) {
     printf("%*s| %s\n", 2 * depth, "", leaf->type);
 }
 
+char *writeEmptyLeaf(oop leaf, FileWriter *fileWriter, int *declarationCount, List *localVars) {
+    char *type = leaf->type;
+
+    (*declarationCount)++;
+
+    char *fullVariableName = malloc(sizeof(char) * 64);
+    sprintf(fullVariableName, "%s%d", type, *declarationCount);
+
+    char *outputString = malloc(
+            sizeof(char) * (64 + strlen(fullVariableName)));
+    sprintf(outputString, "oop %s = new%s();", fullVariableName, type);
+    appendToDeclarationSection(fileWriter, outputString);
+
+    return fullVariableName;
+}
+
+/// Dot Class
+
+oop newDot() {
+    return newObject("Dot");
+}
+
 Dict *getDotMethods() {
     Dict *methods = newDict();
     set(methods, "print", printEmptyLeaf);
+    set(methods, "write", writeEmptyLeaf);
     return methods;
+}
+
+/// Begin Class
+
+oop newBegin() {
+    return newObject("Begin");
 }
 
 Dict *getBeginMethods() {
     Dict *methods = newDict();
     set(methods, "print", printEmptyLeaf);
+    set(methods, "write", writeEmptyLeaf);
     return methods;
+}
+
+/// End Class
+
+oop newEnd() {
+    return newObject("End");
 }
 
 Dict *getEndMethods() {
     Dict *methods = newDict();
     set(methods, "print", printEmptyLeaf);
+    set(methods, "write", writeEmptyLeaf);
     return methods;
 }
+
+/// Generic String Leaf Class Methods
 
 void printStringLeaf(oop expression, int depth) {
     printf("%*s| %s (%s)\n", 2 * depth, "", expression->type, (char*)getProperty(expression, "value"));
 }
 
+char *writeStringLeaf(oop expression, FileWriter *fileWriter, int *declarationCount, List *localVars) {
+    char *type = expression->type;
+
+    (*declarationCount)++;
+
+    char *fullVariableName = malloc(sizeof(char) * 64);
+    sprintf(fullVariableName, "%s%d", type, *declarationCount);
+
+    char *value = getProperty(expression, "value");
+
+    char *convertedValue = convertSpecialChars(value);
+
+    char *outputString = malloc(
+            sizeof(char) * (64 + strlen(fullVariableName) + strlen(convertedValue)));
+    sprintf(outputString, "oop %s = new%s(\"%s\");\n",
+            fullVariableName, type, convertedValue);
+    appendToDeclarationSection(fileWriter, outputString);
+
+    free(convertedValue);
+
+    return fullVariableName;
+}
+
+/// String Class
+
+oop newString(char *value) {
+    // printf("Creating new String with value %s\n", value);
+    int length = strlen(value) + 1;
+    char *newValue = malloc(sizeof(char) * length);
+    strcpy(newValue, value);
+
+    oop string = newObject("String");
+    setProperty(string, "value", newValue);
+    return string;
+}
+
 Dict *getStringMethods() {
     Dict *methods = newDict();
     set(methods, "print", printStringLeaf);
+    set(methods, "write", writeStringLeaf);
     return methods;
+}
+
+/// CharacterClass Class
+
+oop newCharacterClass(char *value) {
+    int length = strlen(value) + 1;
+    char *newValue = malloc(sizeof(char) * length);
+    strcpy(newValue, value);
+
+    oop characterClass = newObject("CharacterClass");
+    setProperty(characterClass, "value", newValue);
+    return characterClass;
 }
 
 Dict *getCharacterClassMethods() {
     Dict *methods = newDict();
     set(methods, "print", printStringLeaf);
+    set(methods, "write", writeStringLeaf);
     return methods;
+}
+
+/// Action Class
+
+oop newAction(char *value, void (*function)()) {
+    int length = strlen(value) + 1;
+    char *newValue = malloc(sizeof(char) * length);
+    strcpy(newValue, value);
+
+    oop action = newObject("Action");
+    setProperty(action, "value", newValue);
+
+    setProperty(action, "function", function);
+    return action;
+}
+
+char *writeAction(oop action, FileWriter *fileWriter, int *declarationCount, List *localVars) {
+    char *type = action->type;
+
+    (*declarationCount)++;
+
+    char *fullVariableName = malloc(sizeof(char) * 64);
+    sprintf(fullVariableName, "%s%d", type, *declarationCount);
+
+    char *functionName = malloc(sizeof(char) * 64);
+    sprintf(functionName, "%s%d_function", type, *declarationCount);
+
+    char *rawActionContent = getProperty(action, "value");
+
+    char *functionDeclaration = calloc(sizeof(char), 65536);
+    unsigned int cursor = 0;
+    cursor += sprintf(functionDeclaration + cursor, "\n");
+    cursor += sprintf(functionDeclaration + cursor, "#define $$ ctx->returnValue\n");
+    cursor += sprintf(functionDeclaration + cursor, "#define yytext ctx->input\n");
+
+    for (int i = 0; i < localVars->used; i++) {
+        cursor += sprintf(functionDeclaration + cursor, "#define %s ctx->vars->data[%d]\n",
+                (char*)getProperty(localVars->data[i], "string"), i);
+    }
+
+    cursor += sprintf(functionDeclaration + cursor, "\nvoid %s(Context *ctx) {\n\t%s\n}\n\n",
+            functionName, rawActionContent);
+
+    for (int i = 0; i < localVars->used; i++) {
+        cursor += sprintf(functionDeclaration + cursor, "#undef %s\n",
+                (char*)getProperty(localVars->data[i], "string"));
+    }
+
+    cursor += sprintf(functionDeclaration + cursor, "#undef $$\n");
+    cursor += sprintf(functionDeclaration + cursor, "#undef yytext\n");
+
+    cursor += sprintf(functionDeclaration + cursor, "\n");
+    appendToActionSection(fileWriter, functionDeclaration);
+
+    free(functionDeclaration);
+
+    char *convertedActionContent = convertSpecialChars(rawActionContent);
+
+    char *outputString = malloc(
+            sizeof(char) * (64 + strlen(fullVariableName) + strlen(convertedActionContent)));
+    sprintf(outputString, "oop %s = newAction(\"%s\", %s);\n",
+            fullVariableName, convertedActionContent, functionName);
+    appendToDeclarationSection(fileWriter, outputString);
+
+    free(convertedActionContent);
+
+    return fullVariableName;
 }
 
 Dict *getActionMethods() {
     Dict *methods = newDict();
     set(methods, "print", printStringLeaf);
+    set(methods, "write", writeAction);
     return methods;
+}
+
+/// Identifier Class
+
+oop newIdentifier(char *value) {
+    int length = strlen(value) + 1;
+    char *newValue = malloc(sizeof(char) * length);
+    strcpy(newValue, value);
+
+    oop identifier = newObject("Identifier");
+    setProperty(identifier, "value", newValue);
+    return identifier;
 }
 
 Dict *getIdentifierMethods() {
     Dict *methods = newDict();
     set(methods, "print", printStringLeaf);
+    set(methods, "write", writeStringLeaf);
     return methods;
+}
+
+/// Symbol Class
+
+oop newSymbol(char *string) {
+    int length = strlen(string) + 1;
+    char *newString = malloc(sizeof(char) * length);
+    strcpy(newString, string);
+
+    oop symbol = newObject("Symbol");
+    setProperty(symbol, "string", newString);
+    return symbol;
 }
 
 Dict *getSymbolMethods() {
@@ -198,8 +671,26 @@ Dict *getSymbolMethods() {
     return methods;
 }
 
+/// Symbol Manipulation functions
+
 int equals(oop obj, oop other) {
     return strcmp(getProperty(obj, "string"), getProperty(other, "string")) == 0; 
+}
+
+oop addSymbolToSymbolList(List *symbolList, oop symbol) {
+    int index = indexOfByValue(symbolList, symbol);
+    if (index == -1) {
+        push(symbolList, symbol);
+        return symbol;
+    } else {
+        free(symbol);
+        return symbolList->data[index];
+    }
+}
+
+oop addNewStringToSymbolList(List *symbolList, char *string) {
+    oop s = newSymbol(string);
+    return addSymbolToSymbolList(symbolList, s);
 }
 
 void declareTypes() {
@@ -242,154 +733,6 @@ void declareTypes() {
     declareType("Symbol", getSymbolMethods());
 }
 
-oop newGrammar() {
-    oop grammar = newObject("Grammar");
-    setProperty(grammar, "definitions", newList(10));
-    return grammar;
-}
-
-oop newDefinition(oop name, oop rule) {
-    oop definition = newObject("Definition");
-    setProperty(definition, "name", name);
-    setProperty(definition, "rule", rule);
-
-    return definition;
-}
-
-oop newAssignment(oop variableName, oop ruleIdentifier) {
-
-    oop assignment = newObject("Assignment");
-    setProperty(assignment, "variableName", variableName);
-    setProperty(assignment, "ruleIdentifier", ruleIdentifier);
-
-    return assignment;
-}
-
-oop newSequence(oop leftExpression, oop rightExpression) {
-    oop sequence = newObject("Sequence");
-    setProperty(sequence, "leftExpression", leftExpression);
-    setProperty(sequence, "rightExpression", rightExpression);
-    return sequence;
-}
-
-oop newAlternation(oop leftExpression, oop rightExpression) {
-    oop alternation = newObject("Alternation");
-    setProperty(alternation, "leftExpression", leftExpression);
-    setProperty(alternation, "rightExpression", rightExpression);
-    return alternation;
-}
-
-oop newStar(oop expression) {
-    oop star = newObject("Star");
-    setProperty(star, "expression", expression);
-    return star;
-}
-
-oop newPlus(oop expression) {
-    oop plus = newObject("Plus");
-    setProperty(plus, "expression", expression);
-    return plus;
-}
-
-oop newOptional(oop expression) {
-    oop optional = newObject("Optional");
-    setProperty(optional, "expression", expression);
-    return optional;
-}
-
-oop newAnd(oop expression) {
-    oop and = newObject("And");
-    setProperty(and, "expression", expression);
-    return and;
-}
-
-oop newNot(oop expression) {
-    oop not = newObject("Not");
-    setProperty(not, "expression", expression);
-    return not;
-}
-
-oop newDot() {
-    return newObject("Dot");
-}
-
-oop newBegin() {
-    return newObject("Begin");
-}
-
-oop newEnd() {
-    return newObject("End");
-}
-
-oop newString(char *value) {
-    // printf("Creating new String with value %s\n", value);
-    int length = strlen(value) + 1;
-    char *newValue = malloc(sizeof(char) * length);
-    strcpy(newValue, value);
-
-    oop string = newObject("String");
-    setProperty(string, "value", newValue);
-    return string;
-}
-
-oop newCharacterClass(char *value) {
-    int length = strlen(value) + 1;
-    char *newValue = malloc(sizeof(char) * length);
-    strcpy(newValue, value);
-
-    oop characterClass = newObject("CharacterClass");
-    setProperty(characterClass, "value", newValue);
-    return characterClass;
-}
-
-oop newAction(char *value, void (*function)()) {
-    int length = strlen(value) + 1;
-    char *newValue = malloc(sizeof(char) * length);
-    strcpy(newValue, value);
-
-    oop action = newObject("Action");
-    setProperty(action, "value", newValue);
-
-    setProperty(action, "function", function);
-    return action;
-}
-
-oop newIdentifier(char *value) {
-    int length = strlen(value) + 1;
-    char *newValue = malloc(sizeof(char) * length);
-    strcpy(newValue, value);
-
-    oop identifier = newObject("Identifier");
-    setProperty(identifier, "value", newValue);
-    return identifier;
-}
-
-oop newSymbol(char *string) {
-    int length = strlen(string) + 1;
-    char *newString = malloc(sizeof(char) * length);
-    strcpy(newString, string);
-
-    oop symbol = newObject("Symbol");
-    setProperty(symbol, "string", newString);
-    return symbol;
-}
-
-oop addSymbolToSymbolList(List *symbolList, oop symbol) {
-    int index = indexOfByValue(symbolList, symbol);
-    if (index == -1) {
-        push(symbolList, symbol);
-        return symbol;
-    } else {
-        free(symbol);
-        return symbolList->data[index];
-    }
-}
-
-oop addNewStringToSymbolList(List *symbolList, char *string) {
-    oop s = newSymbol(string);
-    return addSymbolToSymbolList(symbolList, s);
-}
-
 // Print stuff
 
 void printTree(oop grammar) {
@@ -399,312 +742,43 @@ void printTree(oop grammar) {
     }
 }
 
-// char *convertSpecialChars(char *sourceString) {
-//     char *convertedString = malloc(sizeof(char) * 2 * strlen(sourceString));
-//     convertedString[0] = 0;
-//
-//     for (int i = 0; i < strlen(sourceString); i++) {
-//         
-//         char current = sourceString[i];
-//
-//         switch (current) {
-//
-//             case '\'': { char currentString[] = { '\\', '\'', '\0' }; strcat(convertedString, currentString); break; }
-//             case '\"': { char currentString[] = { '\\', '\"', '\0' }; strcat(convertedString, currentString); break; }
-//             case '\\': { char currentString[] = { '\\', '\\', '\0' }; strcat(convertedString, currentString); break; }
-//             case '\r': { char currentString[] = { '\\', 'r', '\0' }; strcat(convertedString, currentString); break; }
-//             case '\t': { char currentString[] = { '\\', 't', '\0' }; strcat(convertedString, currentString); break; }
-//             case '\n': { char currentString[] = { '\\', 'n', '\0' }; strcat(convertedString, currentString); break; }
-//             default:   { char currentString[] = { current, '\0' }; strcat(convertedString, currentString); break; }
-//         
-//         }
-//
-//     }
-//
-//     return convertedString;
-// }
-//
-// unsigned int getConvertedStringRealLength(char *string) {
-//     int count = 0;
-//     for (int i = 0; i < strlen(string); i++){
-//         if(string[i] == '\\') {
-//             i++;
-//         }
-//         count++;
-//     }
-//     return count;
-// }
-//
-// /*
-//  * Writes the necessary C code to a file to create the expression,
-//  * and returns the name give to the instantiated variable.
-//  *
-//  * @param fptr The file to write to.
-//  * @param expression The expression to write.
-//  * @param declarationCount pointer to the number of variables declared so far
-//  * @param localVars pointer to a list of the current variables in the definition
-//  */
-// char *writeExpression(FILE *fptr, oop expression, int *declarationCount, List *localVars) {
-//     switch (expression->type) {
-//         case Definition: {
-//             
-//             char *definitionName = writeExpression(fptr, get(expression, Definition, name), declarationCount, localVars);
-//
-//             List *l = newList(10);
-//             char *ruleVarName = writeExpression(fptr, get(expression, Definition, rule), declarationCount, l);
-//
-//             for (int i = 0; i < l->used; i++) {
-//                 free(l->data[i]);
-//             }
-//
-//             free(l);
-//
-//             const char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             fprintf(fptr, "union Object %s = { .Definition.type = Definition, .Definition.name = &%s, .Definition.rule = &%s };\n",
-//                     fullVariableName, definitionName, ruleVarName);
-//
-//             return fullVariableName;
-//         }
-//         case Assignment: {
-//             
-//             char *assignedVariableName = writeExpression(fptr, get(expression, Assignment, variableName), declarationCount, localVars);
-//
-//             addNewStringToSymbolList(localVars, get(get(expression, Assignment, variableName), String, value));
-//             char *ruleIdentifierName = writeExpression(fptr, get(expression, Assignment, ruleIdentifier), declarationCount, localVars);
-//
-//             const char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             fprintf(fptr, "union Object %s = { .Assignment.type = Assignment, .Assignment.variableName = &%s, .Assignment.ruleIdentifier = &%s };\n",
-//                     fullVariableName, assignedVariableName, ruleIdentifierName);
-//
-//             return fullVariableName;
-//         }
-//         case Binary: {
-//
-//             char *leftExpressionVarName = writeExpression(fptr, get(expression, Binary, leftExpression), declarationCount, localVars);
-//             char *rightExpressionVarName = writeExpression(fptr, get(expression, Binary, rightExpression), declarationCount, localVars);
-//             
-//             enum BinaryOperators op = get(expression, Binary, op);
-//             const char *variableName = getBinaryOpString(op);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             const char *operatorName = getBinaryOpString(op);
-//             fprintf(fptr, "union Object %s = { .Binary.type = Binary, .Binary.op = %s, .Binary.leftExpression = &%s, .Binary.rightExpression = &%s };\n",
-//                     fullVariableName, operatorName, leftExpressionVarName, rightExpressionVarName);
-//
-//
-//             return fullVariableName;
-//         }
-//         case Unary: {
-//             
-//             char *expressionVarName = writeExpression(fptr, get(expression, Unary, expression), declarationCount, localVars);
-//
-//             enum UnaryOperators op = get(expression, Unary, op);
-//             const char *variableName = getUnaryOpString(op);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             const char *operatorName = getUnaryOpString(op);
-//             fprintf(fptr, "union Object %s = { .Unary.type = Unary, .Unary.op = %s, .Unary.expression = &%s };\n",
-//                     fullVariableName, operatorName, expressionVarName);
-//
-//             return fullVariableName;
-//         }
-//         case Dot: {
-//             
-//             char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             fprintf(fptr, "union Object %s = { .Dot.type = Dot };\n", fullVariableName);
-//
-//             return fullVariableName;
-//         }
-//
-//         case Begin: {
-//
-//             char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             fprintf(fptr, "union Object %s = { .Begin.type = Begin };\n", fullVariableName);
-//
-//             return fullVariableName;
-//         }
-//
-//         case End: {
-//
-//             char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             fprintf(fptr, "union Object %s = { .End.type = End };\n", fullVariableName);
-//
-//             return fullVariableName;
-//         }
-//
-//         case String: {
-//
-//             char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             char *value = get(expression, String, value);
-//
-//             char *convertedValue = convertSpecialChars(value);
-//             fprintf(fptr, "union Object %s = { .String.type = String, .String.value = \"%s\" };\n",
-//                     fullVariableName, convertedValue);
-//             free(convertedValue);
-//
-//             return fullVariableName;
-//         }
-//
-//         case CharacterClass: {
-//
-//             char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             char *value = get(expression, CharacterClass, value);
-//
-//             char *convertedValue = convertSpecialChars(value);
-//             fprintf(fptr, "union Object %s = { .CharacterClass.type = CharacterClass, .CharacterClass.value = \"%s\" };\n",
-//                     fullVariableName, convertedValue);
-//             free(convertedValue);
-//
-//             return fullVariableName;
-//         }
-//
-//         case Action: {
-//
-//             char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             char *functionName = malloc(sizeof(char) * 64);
-//             sprintf(functionName, "%s%d_function", variableName, *declarationCount);
-//
-//             char *rawActionContent = get(expression, Action, value);
-//
-//             fprintf(fptr, "\n");
-//             fprintf(fptr, "#define $$ ctx->returnValue\n");
-//             fprintf(fptr, "#define yytext ctx->input\n");
-//
-//             for (int i = 0; i < localVars->used; i++) {
-//                 fprintf(fptr, "#define %s ctx->vars->data[%d]\n", get(localVars->data[i], Symbol, string), i);
-//             }
-//
-//             fprintf(fptr, "\nvoid %s(Context *ctx) {\n\t%s\n}\n\n", functionName, rawActionContent);
-//
-//             for (int i = 0; i < localVars->used; i++) {
-//                 fprintf(fptr, "#undef %s\n", get(localVars->data[i], Symbol, string));
-//             }
-//
-//             fprintf(fptr, "#undef $$\n");
-//             fprintf(fptr, "#undef yytext\n");
-//
-//             fprintf(fptr, "\n");
-//
-//             char *convertedActionContent = convertSpecialChars(rawActionContent);
-//             fprintf(fptr, "union Object %s = { .Action.type = Action, .Action.value = \"%s\", .Action.function = %s };\n",
-//                     fullVariableName, convertedActionContent, functionName);
-//             free(convertedActionContent);
-//
-//             return fullVariableName;
-//         }
-//
-//         case Identifier: {
-//
-//             char *variableName = getTypeString(expression->type);
-//
-//             (*declarationCount)++;
-//
-//             char *fullVariableName = malloc(sizeof(char) * 64);
-//             sprintf(fullVariableName, "%s%d", variableName, *declarationCount);
-//
-//             char *value = get(expression, Identifier, value);
-//
-//             char *convertedValue = convertSpecialChars(value);
-//             fprintf(fptr, "union Object %s = { .Identifier.type = Identifier, .Identifier.value = \"%s\" };\n",
-//                     fullVariableName, convertedValue);
-//             free(convertedValue);
-//
-//             return fullVariableName;
-//         }
-//         default: fatal("shit hit the fan in write tree"); return "";
-//     }
-// }
-//
-// void writeTree(oop grammar) {
-//     FILE *fptr = fopen("grammar_get_tree.c", "w");
-//
-//     fprintf(fptr, "#include \"grammar_objects.h\"\n\n");
-//
-//     List *definitions = get(grammar, Grammar, definitions);
-//     int expressionCount = 0;
-//
-//     List *definitionVariableNames = newList(10);
-//
-//     for (int i = 0; i < definitions->used; i++) {
-//         char *varName = writeExpression(fptr, definitions->data[i], &expressionCount, NULL);
-//         fprintf(fptr, "\n");
-//         definitionVariableNames = push(definitionVariableNames, newString(varName));
-//     }
-//
-//     fprintf(fptr, "List definitions = { .size = %lu, .used = %lu, .data = { ",
-//             definitionVariableNames->size, definitionVariableNames->used); 
-//
-//     for (int i = 0; i < definitionVariableNames->used; i++) {
-//         fprintf(fptr, "&%s, ", get(definitionVariableNames->data[i], String, value));
-//     }
-//
-//     fprintf(fptr, "} };\n\n");
-//
-//     fprintf(fptr, "union Object grammar = { .Grammar.type = Grammar, .Grammar.definitions = &definitions };\n\n");
-//
-//     fprintf(fptr, "oop getGrammar() {\n");
-//     fprintf(fptr, "\t return &grammar;\n");
-//     fprintf(fptr, "}\n\n");
-//
-//     fclose(fptr);
-// }
-//
+/*
+ * Writes the necessary C code to a file to create the grammar tree.
+ *
+ * @param grammar The file to write to.
+ */
+void writeTree(oop grammar) {
+
+    FileWriter *fileWriter = newFileWriter("grammar_get_tree.c");
+    appendToActionSection(fileWriter, "#include \"grammar_objects.h\"\n\n");
+
+    List *definitions = getProperty(grammar, "definitions");
+    int expressionCount = 0;
+
+    appendToDeclarationSection(fileWriter, "oop getGrammar() {\n");
+
+    appendToDeclarationSection(fileWriter, "oop grammar = newGrammar();\n");
+
+    for (int i = 0; i < definitions->used; i++) {
+        char *varName = getMethod(definitions->data[i], "write")(
+                definitions->data[i], fileWriter, &expressionCount, NULL);
+        appendToDeclarationSection(fileWriter, "\n");
+
+        char *definitionPush = calloc(sizeof(char), 256);
+        sprintf(definitionPush, "push((List*)getProperty(grammar, \"definitions\"), %s);\n", varName);
+        appendToDeclarationSection(fileWriter, definitionPush);
+        free(definitionPush);
+
+        appendToDeclarationSection(fileWriter, "\n");
+    }
+
+
+    appendToDeclarationSection(fileWriter, "\t return grammar;\n");
+    appendToDeclarationSection(fileWriter, "}\n\n");
+
+    writeToFile(fileWriter);
+}
+
 // Context *newContext(char *currentInput) {
 //     Context *ctx = malloc(sizeof(Context));
 //     ctx->varNames = newList(10);
