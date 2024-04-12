@@ -1,3 +1,17 @@
+# 2024-04-12
+
+- [x] Refactor printing tree to use object system
+- [x] Refactor writing tree to use object system
+- [ ] Repair build stuff
+- [ ] Test writing tree
+- [ ] Refactor tree evaluation to use object system
+
+# 2024-04-11
+
+- [x] WSL setup
+- [x] Dictionary type
+- [x] Object system
+
 # 2024-04-10
 
 - [x] ~~Makefile~~ Mason for everything
