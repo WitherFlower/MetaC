@@ -10,9 +10,9 @@
 %}
 
 grammar =       - r:root
-               ( declaration | d:definition { addRuleDefinitionToGrammar(r, d); } )+
+               ( declaration | d:definition { getMethod(r, "addRuleDefinition")(r, d); } )+
                trailer? end-of-file
-               { printTree(r); writeTree(r); }
+               { printTree(r); /* writeTree(r); */}
 
 root = { $$ = newGrammar(); }
 
@@ -23,20 +23,20 @@ trailer =       '%%' < .* >
 definition =    i:identifier EQUAL e:expression SEMICOLON?      { $$ = newDefinition(i, e); }
 
 expression =    s1:sequence (
-                    BAR s2:sequence                             { s1 = newBinary(Alternation, s1, s2); } 
+                    BAR s2:sequence                             { s1 = newAlternation(s1, s2); } 
                 )*                                              { $$ = s1; }
 
 # Was error+ before, rewritten for reasons
 sequence =      e:error (
-                    f:error                                     { e = newBinary(Sequence, e, f); }
+                    f:error                                     { e = newSequence(e, f); }
                 )*                                              { $$ = e; }
 
 error =         p:prefix ( TILDE action )?                      { $$ = p; }
 
 prefix =        AND action
                 |
-                ( AND s:suffix                                  { $$ = newUnary(And, s); }
-                | NOT s:suffix                                  { $$ = newUnary(Not, s); }
+                ( AND s:suffix                                  { $$ = newAnd(s); }
+                | NOT s:suffix                                  { $$ = newNot(s); }
                 | s:suffix                                      { $$ = s; }
                 )
 #                | ip:initPrefix
@@ -51,9 +51,9 @@ prefix =        AND action
 #initPrefix = { $$ = 0; }
 
 suffix =        p:primary
-                ( QUERY                                         { p = newUnary(Optional, p); }
-                | STAR                                          { p = newUnary(Star, p); }
-                | PLUS                                          { p = newUnary(Plus, p); }
+                ( QUERY                                         { p = newOptional(p); }
+                | STAR                                          { p = newStar(p); }
+                | PLUS                                          { p = newPlus(p); }
                 )?                                              { $$ = p; }
 
 primary =       i1:identifier COLON i2:ruleCallIdent !EQUAL     { $$ = newAssignment(i1, i2); }
@@ -114,6 +114,7 @@ end-of-file =   !.
 
 int main()
 {
+    declareTypes();
     while (yyparse());
 
     return 0;

@@ -3,10 +3,7 @@
 
 #include <stdlib.h>
 #include "list.h"
-
-union Object;
-
-typedef union Object *oop;
+#include "objects.h"
 
 typedef struct {
     List *varNames;
@@ -22,140 +19,155 @@ typedef struct {
     List *callStack;
 } ReadState;
 
-enum Types {
-    Grammar,
-    Definition,
-    Assignment,
-    Binary,
-    Unary,
-    Dot,
-    Begin,
-    End,
-    String,
-    CharacterClass,
-    Action,
-    Identifier,
-    Symbol,
-};
+// enum Types {
+//     Grammar,
+//     Definition,
+//     Assignment,
+//     Binary,
+//     Unary,
+//     Dot,
+//     Begin,
+//     End,
+//     String,
+//     CharacterClass,
+//     Action,
+//     Identifier,
+//     Symbol,
+// };
 
-enum BinaryOperators {
-    Sequence,
-    Alternation,
-};
+// enum BinaryOperators {
+//     Sequence,
+//     Alternation,
+// };
+//
+// enum UnaryOperators {
+//     Star,
+//     Plus,
+//     Optional,
+//     And,
+//     Not,
+// };
 
-enum UnaryOperators {
-    Star,
-    Plus,
-    Optional,
-    And,
-    Not,
-};
+// struct Grammar {
+//     int type;
+//     List *definitions;
+// };
+//
+// struct Definition {
+//     int type;
+//     oop name;
+//     oop rule;
+// };
+//
+// struct Assignment {
+//     int type;
+//     oop variableName;
+//     oop ruleIdentifier;
+// };
+//
+// struct Binary {
+//     int type;
+//     int op;
+//     oop leftExpression;
+//     oop rightExpression;
+// };
+//
+// struct Unary {
+//     int type;
+//     int op;
+//     oop expression;
+// };
+//
+// struct Dot {
+//     int type;
+// };
+//
+// struct Begin {
+//     int type;
+// };
+//
+// struct End {
+//     int type;
+// };
+//
+// struct String {
+//     int type;
+//     char *value;
+// };
+//
+// struct CharacterClass {
+//     int type;
+//     char *value;
+// };
+//
+// struct Action {
+//     int type;
+//     char *value;
+//     void (*function)(Context *);
+// };
+//
+// struct Identifier {
+//     int type;
+//     char *value;
+// };
+//
+// struct Symbol {
+//     int type;
+//     char *string;
+// };
 
-struct Grammar {
-    int type;
-    List *definitions;
-};
+// union Object {
+//     int type;
+//     struct Grammar Grammar;
+//     struct Definition Definition;
+//     struct Assignment Assignment;
+//     struct Binary Binary;
+//     struct Unary Unary;
+//     struct Dot Dot;
+//     struct Begin Begin;
+//     struct End End;
+//     struct String String;
+//     struct CharacterClass CharacterClass;
+//     struct Action Action;
+//     struct Identifier Identifier;
+//     struct Symbol Symbol;
+// };
+//
+// oop _newObject(enum Types type, size_t size);
+//
+// oop _checkType(oop object, enum Types type, char *file, int lineNumber);
+//
+// #define newObject(TYPE) _newObject(TYPE, sizeof (struct TYPE))
+// #define get(VAL, TYPE, FIELD) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD
+// #define set(VAL, TYPE, FIELD, NEW_FIELD_VALUE) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD=NEW_FIELD_VALUE
 
-
-struct Definition {
-    int type;
-    oop name;
-    oop rule;
-};
-
-struct Assignment {
-    int type;
-    oop variableName;
-    oop ruleIdentifier;
-};
-
-struct Binary {
-    int type;
-    int op;
-    oop leftExpression;
-    oop rightExpression;
-};
-
-struct Unary {
-    int type;
-    int op;
-    oop expression;
-};
-
-struct Dot {
-    int type;
-};
-
-struct Begin {
-    int type;
-};
-
-struct End {
-    int type;
-};
-
-struct String {
-    int type;
-    char *value;
-};
-
-struct CharacterClass {
-    int type;
-    char *value;
-};
-
-struct Action {
-    int type;
-    char *value;
-    void (*function)(Context *);
-};
-
-struct Identifier {
-    int type;
-    char *value;
-};
-
-struct Symbol {
-    int type;
-    char *string;
-};
-
-union Object {
-    int type;
-    struct Grammar Grammar;
-    struct Definition Definition;
-    struct Assignment Assignment;
-    struct Binary Binary;
-    struct Unary Unary;
-    struct Dot Dot;
-    struct Begin Begin;
-    struct End End;
-    struct String String;
-    struct CharacterClass CharacterClass;
-    struct Action Action;
-    struct Identifier Identifier;
-    struct Symbol Symbol;
-};
-
-oop _newObject(enum Types type, size_t size);
-
-oop _checkType(oop object, enum Types type, char *file, int lineNumber);
-
-#define newObject(TYPE) _newObject(TYPE, sizeof (struct TYPE))
-#define get(VAL, TYPE, FIELD) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD
-#define set(VAL, TYPE, FIELD, NEW_FIELD_VALUE) _checkType(VAL, TYPE, __FILE__, __LINE__)->TYPE.FIELD=NEW_FIELD_VALUE
+void declareTypes();
 
 oop newGrammar();
 
-void addRuleDefinitionToGrammar(oop grammar, oop definition);
+// void addRuleDefinitionToGrammar(oop grammar, oop definition);
 
 oop newDefinition(oop name, oop rule);
 
 oop newAssignment(oop variableName, oop ruleIdentifier);
 
-oop newBinary(enum BinaryOperators op, oop leftExpression, oop rightExpression);
+// oop newBinary(enum BinaryOperators op, oop leftExpression, oop rightExpression);
+//
+// oop newUnary(enum UnaryOperators op, oop expression);
 
-oop newUnary(enum UnaryOperators op, oop expression);
+oop newSequence(oop leftExpression, oop rightExpression);
+
+oop newAlternation(oop leftExpression, oop rightExpression);
+
+oop newStar(oop expression);
+
+oop newPlus(oop expression);
+
+oop newOptional(oop expression);
+
+oop newAnd(oop expression);
+
+oop newNot(oop expression);
 
 oop newDot();
 
@@ -171,7 +183,7 @@ oop newAction(char *value, void (*function)());
 
 oop newIdentifier(char *value);
 
-oop newInteger(int value);
+// oop newInteger(int value);
 
 oop newSymbol(char *string);
 

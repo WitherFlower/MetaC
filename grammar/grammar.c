@@ -685,7 +685,7 @@ YY_ACTION(void) yy_3_suffix(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_3_suffix\n"));
   {
 #line 56
-   p = newUnary(Plus, p); ;
+   p = newPlus(p); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -701,7 +701,7 @@ YY_ACTION(void) yy_2_suffix(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_2_suffix\n"));
   {
 #line 55
-   p = newUnary(Star, p); ;
+   p = newStar(p); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -717,7 +717,7 @@ YY_ACTION(void) yy_1_suffix(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_suffix\n"));
   {
 #line 54
-   p = newUnary(Optional, p); ;
+   p = newOptional(p); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -749,7 +749,7 @@ YY_ACTION(void) yy_2_prefix(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_2_prefix\n"));
   {
 #line 39
-   __ = newUnary(Not, s); ;
+   __ = newNot(s); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -765,7 +765,7 @@ YY_ACTION(void) yy_1_prefix(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_prefix\n"));
   {
 #line 38
-   __ = newUnary(And, s); ;
+   __ = newAnd(s); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -816,7 +816,7 @@ YY_ACTION(void) yy_1_sequence(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_sequence\n"));
   {
 #line 31
-   e = newBinary(Sequence, e, f); ;
+   e = newSequence(e, f); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -852,7 +852,7 @@ YY_ACTION(void) yy_1_expression(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_expression\n"));
   {
 #line 26
-   s1 = newBinary(Alternation, s1, s2); ;
+   s1 = newAlternation(s1, s2); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -902,7 +902,7 @@ YY_ACTION(void) yy_2_grammar(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_2_grammar\n"));
   {
 #line 15
-   printTree(r); writeTree(r); ;
+   printTree(r); /* writeTree(r); */;
   }
 #undef yythunkpos
 #undef yypos
@@ -920,7 +920,7 @@ YY_ACTION(void) yy_1_grammar(yycontext *yy, char *yytext, int yyleng)
   yyprintf((stderr, "do yy_1_grammar\n"));
   {
 #line 13
-   addRuleDefinitionToGrammar(r, d); ;
+   getMethod(r, "addRuleDefinition")(r, d); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1606,6 +1606,7 @@ YY_PARSE(yycontext *) YYRELEASE(yycontext *yyctx)
 
 int main()
 {
+    declareTypes();
     while (yyparse());
 
     return 0;

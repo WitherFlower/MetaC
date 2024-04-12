@@ -57,6 +57,13 @@ thing2 = custom_target(
   output: 'thing2',
 )
 
+test_list = executable(
+  'test_list',
+  common_src + ['test_list.c'],
+)
+
+test('list', test_list)
+
 # diff = custom_target(
 #   'diff',
 #   command: ['diff', '@INPUT@'],
