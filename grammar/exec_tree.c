@@ -4,9 +4,10 @@
 #include "grammar_get_tree.h"
 #include "vec.h"
 
-DECLARE_VECTOR(StrVec, char);
+DECLARE_VECTOR(StrVec, char)
 
 int main() {
+    declareTypes();
     oop grammar = getGrammar();
 
     StrVec *input = StrVec_new();

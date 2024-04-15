@@ -102,6 +102,17 @@ void freeFileWriter(FileWriter *fileWriter) {
     free(fileWriter);
 }
 
+void noOpMethod (oop object, ...) { }
+
+Context *newContext(char *currentInput) {
+    Context *ctx = malloc(sizeof(Context));
+    ctx->varNames = newList(10);
+    ctx->vars = newList(10);
+    ctx->input = currentInput;
+    ctx->returnValue = NULL;
+    return ctx;
+}
+
 /// ---- Class declarations ----
 
 /// Grammar Class
@@ -118,9 +129,17 @@ void addRuleDefinition(oop grammar, oop definition) {
     push(rootExpressions, definition);
 }
 
+void printGrammar(oop grammar, int depth) {
+    List *definitions = getProperty(grammar, "definitions");
+    for (int i = 0; i < definitions->used; i++) {
+        getMethod(definitions->data[i], "print")(definitions->data[i], depth);
+    }
+}
+
 Dict *getGrammarMethods() {
     Dict *methods = newDict();
     set(methods, "addRuleDefinition", addRuleDefinition);
+    set(methods, "print", printGrammar);
     return methods;
 }
 
@@ -227,10 +246,59 @@ char *writeAssignment(oop assignment, FileWriter *fileWriter, int *declarationCo
     return fullVariableName;
 }
 
+void fillContextAssignment(oop rule, Context *ctx) {
+    // printf("Adding variable %s to context\n", get(get(rule, Assignment, variableName), String, value));
+    addNewStringToSymbolList(ctx->varNames, getProperty(getProperty(rule, "variableName"), "value"));
+}
+
+long applyAssignment(oop rule, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+
+    oop s = newSymbol(getProperty(getProperty(rule, "ruleIdentifier"), "value"));
+    int ruleIndex = indexOfByValue(ruleNames, s);
+
+    oop innerRule = rules->data[ruleIndex];
+    Context *innerContext = newContext(ctx->input);
+
+    // printf("Applying the following inner rule\n");
+    // getMethod(innerRule, "print")(innerRule, 0);
+
+    push(state->callStack, s);
+
+    int cursor = state->cursor;
+    int lastBegin = state->lastBegin;
+
+    getMethod(innerRule, "fillContext")(innerRule, innerContext);
+
+    long success = (long)getMethod(innerRule, "applyRule")(innerRule, ruleNames, rules, state, innerContext);
+
+    if (success) {
+        oop varSymbol = newSymbol(getProperty(getProperty(rule, "variableName"), "value"));
+
+        // printf("\nSuccessfully parsed assignment to variable %s\n", (char*)getProperty(varSymbol, "string"));
+        // printf("Value :\n");
+        // getMethod(innerContext->returnValue, "print")(innerContext->returnValue, 0);
+        // printf("Storing Value in vars[%d]\n", indexOfByValue(ctx->varNames, varSymbol));
+
+        ctx->vars->data[indexOfByValue(ctx->varNames, varSymbol)] = innerContext->returnValue;
+
+        free(varSymbol);
+
+    } else {
+        state->cursor = cursor;
+        state->lastBegin = lastBegin;
+    }
+
+    state->callStack->used--;
+    free(s);
+    return success;
+}
+
 Dict *getAssignmentMethods() {
     Dict *methods = newDict();
     set(methods, "print", printAssignment);
     set(methods, "write", writeAssignment);
+    set(methods, "fillContext", fillContextAssignment);
+    set(methods, "applyRule", applyAssignment);
     return methods;
 }
 
@@ -261,6 +329,14 @@ char *writeBinary(oop binary, FileWriter *fileWriter, int *declarationCount, Lis
     return fullVariableName;
 }
 
+void fillContextBinary(oop rule, Context *ctx) {
+    oop leftExpression = getProperty(rule, "leftExpression");
+    getMethod(leftExpression, "fillContext")(leftExpression, ctx);
+
+    oop rightExpression = getProperty(rule, "rightExpression");
+    getMethod(rightExpression, "fillContext")(rightExpression, ctx);
+}
+
 /// Sequence Class
 
 oop newSequence(oop leftExpression, oop rightExpression) {
@@ -285,10 +361,22 @@ void printSequence(oop sequence, int depth) {
     getMethod(rightExpr, "print")(rightExpr, depth + 1);
 }
 
+long applySequence(oop sequence, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    oop leftExpr = getProperty(sequence, "leftExpression");
+    oop rightExpr = getProperty(sequence, "rightExpression");
+
+    if (getMethod(leftExpr, "applyRule")(leftExpr, ruleNames, rules, state, ctx)) {
+        return (long)getMethod(rightExpr, "applyRule")(rightExpr, ruleNames, rules, state, ctx);
+    }
+    return 0;
+}
+
 Dict *getSequenceMethods() {
     Dict *methods = newDict();
     set(methods, "print", printSequence);
     set(methods, "write", writeBinary);
+    set(methods, "fillContext", fillContextBinary);
+    set(methods, "applyRule", applySequence);
     return methods;
 }
 
@@ -316,10 +404,28 @@ void printAlternation(oop alternation, int depth) {
     getMethod(rightExpr, "print")(rightExpr, depth + 1);
 }
 
+long applyAlternation(oop alternation, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    oop leftExpr = getProperty(alternation, "leftExpression");
+    oop rightExpr = getProperty(alternation, "rightExpression");
+
+    int cursor = state->cursor;
+    int lastBegin = state->lastBegin;
+
+    if (!getMethod(leftExpr, "applyRule")(leftExpr, ruleNames, rules, state, ctx)) {
+        // printf("Going to next alternation choice\n");
+        state->cursor = cursor;
+        state->lastBegin = lastBegin;
+        return (long)getMethod(rightExpr, "applyRule")(rightExpr, ruleNames, rules, state, ctx);
+    }
+    return 1;
+}
+
 Dict *getAlternationMethods() {
     Dict *methods = newDict();
     set(methods, "print", printAlternation);
     set(methods, "write", writeBinary);
+    set(methods, "fillContext", fillContextBinary);
+    set(methods, "applyRule", applyAlternation);
     return methods;
 }
 
@@ -357,6 +463,11 @@ char *writeUnary(oop unary, FileWriter *fileWriter, int *declarationCount, List 
     return fullVariableName;
 }
 
+void fillContextUnary(oop rule, Context *ctx) {
+    oop expression = getProperty(rule, "expression");
+    getMethod(expression, "fillContext")(expression, ctx);
+}
+
 /// Star Class
 
 oop newStar(oop expression) {
@@ -365,10 +476,18 @@ oop newStar(oop expression) {
     return star;
 }
 
+long applyStar(oop star, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    oop innerExpression = getProperty(star, "expression");
+    while (getMethod(innerExpression, "applyRule")(innerExpression, ruleNames, rules, state, ctx));
+    return 1;
+}
+
 Dict *getStarMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
     set(methods, "write", writeUnary);
+    set(methods, "fillContext", fillContextUnary);
+    set(methods, "applyRule", applyStar);
     return methods;
 }
 
@@ -380,10 +499,22 @@ oop newPlus(oop expression) {
     return plus;
 }
 
+long applyPlus(oop plus, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    oop innerExpression = getProperty(plus, "expression");
+
+    if (!getMethod(innerExpression, "applyRule")(innerExpression, ruleNames, rules, state, ctx))
+        return 0;
+
+    while (getMethod(innerExpression, "applyRule")(innerExpression, ruleNames, rules, state, ctx));
+    return 1;
+}
+
 Dict *getPlusMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
     set(methods, "write", writeUnary);
+    set(methods, "fillContext", fillContextUnary);
+    set(methods, "applyRule", applyPlus);
     return methods;
 }
 
@@ -395,10 +526,19 @@ oop newOptional(oop expression) {
     return optional;
 }
 
+long applyOptional(oop optional, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    oop innerExpression = getProperty(optional, "expression");
+
+    getMethod(innerExpression, "applyRule")(innerExpression, ruleNames, rules, state, ctx);
+    return 1;
+}
+
 Dict *getOptionalMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
     set(methods, "write", writeUnary);
+    set(methods, "fillContext", fillContextUnary);
+    set(methods, "applyRule", applyOptional);
     return methods;
 }
 
@@ -410,10 +550,24 @@ oop newAnd(oop expression) {
     return and;
 }
 
+long applyAnd(oop and, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    // Not sure what to do here
+    oop innerExpression = getProperty(and, "expression");
+
+    int cursor = state->cursor;
+    if (getMethod(innerExpression, "applyRule")(innerExpression, ruleNames, rules, state, ctx)) {
+        state->cursor = cursor;
+        return (long)getMethod(innerExpression, "applyRule")(innerExpression, ruleNames, rules, state, ctx);
+    }
+    return 0;
+}
+
 Dict *getAndMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
     set(methods, "write", writeUnary);
+    set(methods, "fillContext", fillContextUnary);
+    set(methods, "applyRule", applyAnd);
     return methods;
 }
 
@@ -425,10 +579,27 @@ oop newNot(oop expression) {
     return not;
 }
 
+long applyNot(oop not, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    oop innerExpression = getProperty(not, "expression");
+
+    int cursor = state->cursor;
+    // printf("Applying Not with cursor = %d\n", cursor);
+
+    if (getMethod(innerExpression, "applyRule")(innerExpression, ruleNames, rules, state, ctx)) {
+        // printf("Exiting Not\n");
+        state->cursor = cursor;
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
 Dict *getNotMethods() {
     Dict *methods = newDict();
     set(methods, "print", printUnary);
     set(methods, "write", writeUnary);
+    set(methods, "fillContext", fillContextUnary);
+    set(methods, "applyRule", applyNot);
     return methods;
 }
 
@@ -460,10 +631,20 @@ oop newDot() {
     return newObject("Dot");
 }
 
+long applyDot(oop dot, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    if (state->string[state->cursor] != '\0') {
+        state->cursor++;
+        return 1;
+    }
+    return 0;
+}
+
 Dict *getDotMethods() {
     Dict *methods = newDict();
     set(methods, "print", printEmptyLeaf);
     set(methods, "write", writeEmptyLeaf);
+    set(methods, "fillContext", noOpMethod);
+    set(methods, "applyRule", applyDot);
     return methods;
 }
 
@@ -473,10 +654,17 @@ oop newBegin() {
     return newObject("Begin");
 }
 
+long applyBegin(oop begin, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    state->lastBegin = state->cursor;
+    return 1;
+}
+
 Dict *getBeginMethods() {
     Dict *methods = newDict();
     set(methods, "print", printEmptyLeaf);
     set(methods, "write", writeEmptyLeaf);
+    set(methods, "fillContext", noOpMethod);
+    set(methods, "applyRule", applyBegin);
     return methods;
 }
 
@@ -486,10 +674,22 @@ oop newEnd() {
     return newObject("End");
 }
 
+long applyEnd(oop end, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    if (ctx->input != NULL) {
+        free(ctx->input);
+    }
+    unsigned int inputSize = state->cursor - state->lastBegin;
+    ctx->input = calloc(sizeof(char), state->cursor - state->lastBegin + 1);
+    strncpy(ctx->input, state->string + state->lastBegin, inputSize);
+    return 1;
+}
+
 Dict *getEndMethods() {
     Dict *methods = newDict();
     set(methods, "print", printEmptyLeaf);
     set(methods, "write", writeEmptyLeaf);
+    set(methods, "fillContext", noOpMethod);
+    set(methods, "applyRule", applyEnd);
     return methods;
 }
 
@@ -535,10 +735,36 @@ oop newString(char *value) {
     return string;
 }
 
+long applyString(oop string, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+
+    int n = strlen(getProperty(string, "value"));
+    char *received = calloc(1 + n, sizeof(char));
+    strncpy(received, state->string + state->cursor, n);
+    received = convertSpecialChars(received);
+    received[n] = '\0';
+
+    // printf("Received String : \"%s\"\n", received);
+
+    char *expected = getProperty(string, "value");
+    // printf("Expected String : \"%s\"\n", get(rule, String, value));
+
+    if (strcmp(received, expected) == 0) {
+        state->cursor += getConvertedStringRealLength(getProperty(string, "value"));
+        // printf("Equal, incrementing cursor by %u\n", getConvertedStringRealLength(get(rule, String, value)));
+        free(received);
+        return 1;
+    }
+    // printf("Not Equal\n");
+    free(received);
+    return 0;
+}
+
 Dict *getStringMethods() {
     Dict *methods = newDict();
     set(methods, "print", printStringLeaf);
     set(methods, "write", writeStringLeaf);
+    set(methods, "fillContext", noOpMethod);
+    set(methods, "applyRule", applyString);
     return methods;
 }
 
@@ -554,16 +780,36 @@ oop newCharacterClass(char *value) {
     return characterClass;
 }
 
+long applyCharacterClass(oop characterClass, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    char *classRegex = malloc(sizeof(char) * (3 + strlen(getProperty(characterClass, "value"))));
+    sprintf(classRegex, "[%s]", (char*)getProperty(characterClass, "value"));
+
+    // printf("classRegex value : %s\n", classRegex);
+    
+    char nextChar[] = { state->string[state->cursor], '\0' };
+
+    // printf("nextChar: %c\n", nextChar[0]);
+
+    if (match(classRegex, nextChar)) {
+        state->cursor++;
+        return 1;
+    }
+
+    return 0;
+}
+
 Dict *getCharacterClassMethods() {
     Dict *methods = newDict();
     set(methods, "print", printStringLeaf);
     set(methods, "write", writeStringLeaf);
+    set(methods, "fillContext", noOpMethod);
+    set(methods, "applyRule", applyCharacterClass);
     return methods;
 }
 
 /// Action Class
 
-oop newAction(char *value, void (*function)()) {
+oop newAction(char *value, void (*function)(Context*)) {
     int length = strlen(value) + 1;
     char *newValue = malloc(sizeof(char) * length);
     strcpy(newValue, value);
@@ -628,10 +874,20 @@ char *writeAction(oop action, FileWriter *fileWriter, int *declarationCount, Lis
     return fullVariableName;
 }
 
+long applyAction(oop action, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    // printf("\nExecuting Action %s\n", get(rule, Action, value));
+    // printf("Current input (yytext) is %s\n", ctx->input);
+    ((void (*)(Context*))getProperty(action, "function"))(ctx);
+    // printf("Return value ($$) is %p\n", ctx->returnValue);
+    return 1;
+}
+
 Dict *getActionMethods() {
     Dict *methods = newDict();
     set(methods, "print", printStringLeaf);
     set(methods, "write", writeAction);
+    set(methods, "fillContext", noOpMethod);
+    set(methods, "applyRule", applyAction);
     return methods;
 }
 
@@ -647,10 +903,42 @@ oop newIdentifier(char *value) {
     return identifier;
 }
 
+long applyIdentifier(oop identifier, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
+    oop s = newSymbol(getProperty(identifier, "value"));
+    int ruleIndex = indexOfByValue(ruleNames, s);
+
+    push(state->callStack, s);
+
+    oop innerRule = rules->data[ruleIndex];
+    Context *innerContext = newContext(ctx->input);
+
+    getMethod(innerRule, "fillContext")(innerRule, innerContext);
+
+    // printf("Applying the following inner rule\n");
+    // printExpression(innerRule, 0);
+
+    int cursor = state->cursor;
+    int lastBegin = state->lastBegin;
+
+    long success = (long)getMethod(innerRule, "applyRule")(innerRule, ruleNames, rules, state, ctx);
+
+    if (!success) {
+        state->cursor = cursor;
+        state->lastBegin = lastBegin;
+    }
+
+    state->callStack->used--;
+    free(s);
+
+    return success;
+}
+
 Dict *getIdentifierMethods() {
     Dict *methods = newDict();
     set(methods, "print", printStringLeaf);
     set(methods, "write", writeStringLeaf);
+    set(methods, "fillContext", noOpMethod);
+    set(methods, "applyRule", applyIdentifier);
     return methods;
 }
 
@@ -736,10 +1024,7 @@ void declareTypes() {
 // Print stuff
 
 void printTree(oop grammar) {
-    List *definitions = getProperty(grammar, "definitions");
-    for (int i = 0; i < definitions->used; i++) {
-        getMethod(definitions->data[i], "print")(definitions->data[i], 0);
-    }
+    printGrammar(grammar, 0);
 }
 
 /*
@@ -779,312 +1064,71 @@ void writeTree(oop grammar) {
     writeToFile(fileWriter);
 }
 
-// Context *newContext(char *currentInput) {
-//     Context *ctx = malloc(sizeof(Context));
-//     ctx->varNames = newList(10);
-//     ctx->vars = newList(10);
-//     ctx->input = currentInput;
-//     ctx->returnValue = NULL;
-//     return ctx;
-// }
-//
-// void fillContextWithAssignments(Context *ctx, oop rule) {
-//     switch (rule->type) {
-//         case Assignment:
-//             // printf("Adding variable %s to context\n", get(get(rule, Assignment, variableName), String, value));
-//             addNewStringToSymbolList(ctx->varNames, get(get(rule, Assignment, variableName), String, value));
-//             break;
-//
-//         case Binary:
-//             fillContextWithAssignments(ctx, get(rule, Binary, leftExpression));
-//             fillContextWithAssignments(ctx, get(rule, Binary, rightExpression));
-//             break;
-//
-//         case Unary:
-//             fillContextWithAssignments(ctx, get(rule, Unary, expression));
-//             break;
-//
-//         default:
-//             break;
-//     }
-// }
-//
+/*
+ * Evaluates the tree representing grammars and outputs the tree representation of the grammar represented by string.
+ */
+oop evaluateTree(oop grammar, char *string) {
+
+    List *rules = newList(10);
+    List *ruleNames = newList(10);
+
+    for (int i = 0; i < ((List*)getProperty(grammar, "definitions"))->used; i++) {
+        push(rules, getProperty((oop)((List*)getProperty(grammar, "definitions"))->data[i], "rule"));
+        push(ruleNames, newSymbol(
+                    getProperty(
+                        getProperty(
+                            ((List*)getProperty(grammar, "definitions"))->data[i],
+                            "name"),
+                        "value")
+                    ));
+    }
+
+    Context *ctx = newContext(NULL);
+    ReadState state = { .cursor = 0, .string = string, .lastBegin = 0, .callStack = newList(10) };
+
+    getMethod(rules->data[0], "fillContext")(rules->data[0], ctx);
+
+    // printf("Starting parsing with the following rule\n");
+    // printExpression(rules->data[0], 0);
+
+    push(state.callStack, ruleNames->data[0]);
+
+    if (getMethod(rules->data[0], "applyRule")(rules->data[0], ruleNames, rules, &state, ctx)) {
+        return ctx->returnValue;
+
+    } else {
+        fatal("Couldn't parse grammar\n");
+        return NULL;
+    }
+}
+
+/// Old code for printing call stack when applying rules
+
 // char *getCallStackString(List *callStack) {
 //
 //     char *res = calloc(sizeof(char), callStack->used * 32);
 //
 //     for (int i = 0; i < callStack->used; i++) {
 //         res = strcat(res, " > ");
-//         res = strcat(res, get(callStack->data[i], Symbol, string));
+//         res = strcat(res, getProperty(callStack->data[i], "string"));
 //     }
 //
 //     return res;
 // }
-//
+
 // int applyRule(oop rule, List *ruleNames, List *rules, ReadState *state, Context *ctx) {
-//
-//     char* nextCharacters = calloc(sizeof(char), 16);
-//     nextCharacters = strncpy(nextCharacters, state->string + state->cursor, 16);
-//     nextCharacters = convertSpecialChars(nextCharacters);
-//
-//     char* callStackString = getCallStackString(state->callStack);
-//
-//     // printf("\nParsing %s (%d)\nIn%s\n>>>>>   [%s]\n",
-//     //         getTypeString(rule->type), state->cursor, callStackString, nextCharacters);
-//
-//     free(callStackString);
-//     free(nextCharacters);
-//
-//     switch (rule->type) {
-//
-//         case Definition:
-//             fatal("Tried to apply a rule of type Definition, but doesn't make sense\n");
-//             return 0;
-//
-//         case Assignment: {
-//             oop s = newSymbol(get(get(rule, Assignment, ruleIdentifier), Identifier, value));
-//             int ruleIndex = indexOfByValue(ruleNames, s);
-//
-//             oop innerRule = rules->data[ruleIndex];
-//             Context *innerContext = newContext(ctx->input);
-//
-//             // printf("Applying the following inner rule\n");
-//             // printExpression(innerRule, 0);
-//
-//             state->callStack = push(state->callStack, s);
-//
-//             int cursor = state->cursor;
-//             int lastBegin = state->lastBegin;
-//
-//             fillContextWithAssignments(innerContext, innerRule);
-//
-//             int success = applyRule(innerRule, ruleNames, rules, state, innerContext);
-//
-//             if (success) {
-//                 oop varSymbol = newSymbol(get(get(rule, Assignment, variableName), String, value));
-//
-//                 // printf("Successfully parsed assignment to variable %s\n", get(varSymbol, Symbol, string));
-//                 // printf("Value :\n");
-//                 // printExpression(innerContext->returnValue, 0);
-//                 // printf("Storing Value in vars[%d]\n", indexOfByValue(ctx->varNames, varSymbol));
-//
-//                 ctx->vars->data[indexOfByValue(ctx->varNames, varSymbol)] = innerContext->returnValue;
-//
-//                 free(varSymbol);
-//
-//             } else {
-//                 state->cursor = cursor;
-//                 state->lastBegin = lastBegin;
-//             }
-//
-//             state->callStack->used--;
-//             free(s);
-//             return success;
-//         }
-//
-//         case Binary: {
-//             // printf("\tParsing %s (%d)\n", getBinaryOpString(get(rule, Binary, op)), state->cursor);
-//             switch (get(rule, Binary, op)) {
-//                 case Sequence:
-//                     if (applyRule(get(rule, Binary, leftExpression), ruleNames, rules, state, ctx)) {
-//                         return applyRule(get(rule, Binary, rightExpression), ruleNames, rules, state, ctx);
-//                     }
-//                     return 0;
-//                 case Alternation: {
-//
-//                     int cursor = state->cursor;
-//                     int lastBegin = state->lastBegin;
-//
-//                     if (!applyRule(get(rule, Binary, leftExpression), ruleNames, rules, state, ctx)) {
-//                         // printf("Going to next alternation choice\n");
-//                         state->cursor = cursor;
-//                         state->lastBegin = lastBegin;
-//                         return applyRule(get(rule, Binary, rightExpression), ruleNames, rules, state, ctx);
-//                     }
-//                     return 1;
-//                 }
-//             }
-//         }
-//
-//         case Unary: {
-//             // printf("\tParsing %s (%d)\n", getUnaryOpString(get(rule, Unary, op)), state->cursor);
-//             switch (get(rule, Unary, op)) {
-//                 case Star:
-//                     while (applyRule(get(rule, Unary, expression), ruleNames, rules, state, ctx));
-//                     return 1;
-//
-//                 case Plus:
-//                     if (!applyRule(get(rule, Unary, expression), ruleNames, rules, state, ctx))
-//                         return 0;
-//
-//                     while (applyRule(get(rule, Unary, expression), ruleNames, rules, state, ctx));
-//                     return 1;
-//
-//                 case Optional:
-//                     applyRule(get(rule, Unary, expression), ruleNames, rules, state, ctx);
-//                     return 1;
-//
-//                 // Not sure what to do here
-//                 case And: {
-//                     int cursor = state->cursor;
-//                     if (applyRule(get(rule, Unary, expression), ruleNames, rules, state, ctx)) {
-//                         state->cursor = cursor;
-//                         return applyRule(get(rule, Unary, expression), ruleNames, rules, state, ctx);
-//                     }
-//                 }
-//                 
-//                 case Not: {
-//                     int cursor = state->cursor;
-//                     // printf("Applying Not with cursor = %d\n", cursor);
-//
-//                     if (applyRule(get(rule, Unary, expression), ruleNames, rules, state, ctx)) {
-//                         // printf("Exiting Not\n");
-//                         state->cursor = cursor;
-//                         return 0;
-//
-//                     } else {
-//                         return 1;
-//                     }
-//                 }
-//             }
-//         }
-//
-//         case Dot:
-//             if (state->string[state->cursor] != '\0') {
-//                 state->cursor++;
-//                 return 1;
-//             }
-//             return 0;
-//
-//         // TODO: Add verification of right amount of <>
-//         case Begin:
-//             state->lastBegin = state->cursor;
-//             return 1;
-//
-//         case End:
-//             if (ctx->input != NULL) {
-//                 free(ctx->input);
-//             }
-//             unsigned int inputSize = state->cursor - state->lastBegin;
-//             ctx->input = calloc(sizeof(char), state->cursor - state->lastBegin + 1);
-//             strncpy(ctx->input, state->string + state->lastBegin, inputSize);
-//             return 1;
-//
-//         case String: {
-//
-//             int n = strlen(get(rule, String, value));
-//             char *received = calloc(1 + n, sizeof(char));
-//             strncpy(received, state->string + state->cursor, n);
-//             received = convertSpecialChars(received);
-//             received[n] = '\0';
-//
-//             // printf("Received String : \"%s\"\n", received);
-//
-//             char *expected = get(rule, String, value);
-//             // printf("Expected String : \"%s\"\n", get(rule, String, value));
-//
-//             if (strcmp(received, expected) == 0) {
-//                 state->cursor += getConvertedStringRealLength(get(rule, String, value));
-//                 // printf("Equal, incrementing cursor by %u\n", getConvertedStringRealLength(get(rule, String, value)));
-//                 free(received);
-//                 return 1;
-//             }
-//             // printf("Not Equal\n");
-//             free(received);
-//             return 0;
-//         }
-//
-//         case CharacterClass: {
-//
-//             char *classRegex = malloc(sizeof(char) * (3 + strlen(get(rule, CharacterClass, value))));
-//             sprintf(classRegex, "[%s]", get(rule, CharacterClass, value));
-//
-//             // printf("classRegex value : %s\n", classRegex);
-//             
-//             char nextChar[] = { state->string[state->cursor], '\0' };
-//
-//             // printf("nextChar: %c\n", nextChar[0]);
-//
-//             if (match(classRegex, nextChar)) {
-//                 state->cursor++;
-//                 return 1;
-//             }
-//
-//             return 0;
-//         }
-//
-//         case Action:
-//             // printf("\nExecuting Action %s\n", get(rule, Action, value));
-//             // printf("Current input (yytext) is %s\n", ctx->input);
-//             get(rule, Action, function)(ctx);
-//             // printf("Return value ($$) is %p\n", ctx->returnValue);
-//             return 1;
-//
-//         case Identifier: {
-//             oop s = newSymbol(get(rule, Identifier, value));
-//             int ruleIndex = indexOfByValue(ruleNames, s);
-//
-//             state->callStack = push(state->callStack, s);
-//
-//             oop innerRule = rules->data[ruleIndex];
-//             Context *innerContext = newContext(ctx->input);
-//
-//             fillContextWithAssignments(innerContext, innerRule);
-//
-//             // printf("Applying the following inner rule\n");
-//             // printExpression(innerRule, 0);
-//
-//             int cursor = state->cursor;
-//             int lastBegin = state->lastBegin;
-//
-//             int success = applyRule(innerRule, ruleNames, rules, state, ctx);
-//
-//             if (!success) {
-//                 state->cursor = cursor;
-//                 state->lastBegin = lastBegin;
-//             }
-//
-//             state->callStack->used--;
-//             free(s);
-//
-//             return success;
-//         }
-//             
-//         default:
-//             fatal("Shit hit the fan\n");
-//             return 0;
-//     }
+
+    // char* nextCharacters = calloc(sizeof(char), 16);
+    // nextCharacters = strncpy(nextCharacters, state->string + state->cursor, 16);
+    // nextCharacters = convertSpecialChars(nextCharacters);
+    //
+    // char* callStackString = getCallStackString(state->callStack);
+
+    // printf("\nParsing %s (%d)\nIn%s\n>>>>>   [%s]\n",
+    //         getTypeString(rule->type), state->cursor, callStackString, nextCharacters);
+
+    // free(callStackString);
+    // free(nextCharacters);
+        // TODO: Add verification of right amount of <>
+
 // }
-//
-// /*
-//  * Evaluates the tree representing grammars and outputs the tree representation of the grammar represented by string.
-//  */
-// oop evaluateTree(oop grammar, char *string) {
-//
-//     List *rules = newList(10);
-//     List *ruleNames = newList(10);
-//
-//     for (int i = 0; i < get(grammar, Grammar, definitions)->used; i++) {
-//         rules = push(rules, get(get(grammar, Grammar, definitions)->data[i], Definition, rule));
-//         ruleNames = push(ruleNames, newSymbol(get(get(get(grammar, Grammar, definitions)->data[i], Definition, name), String, value)));
-//     }
-//
-//     Context *ctx = newContext(NULL);
-//     ReadState state = { .cursor = 0, .string = string, .lastBegin = 0, .callStack = newList(10) };
-//
-//     fillContextWithAssignments(ctx, rules->data[0]);
-//
-//     // printf("Starting parsing with the following rule\n");
-//     // printExpression(rules->data[0], 0);
-//
-//     state.callStack = push(state.callStack, ruleNames->data[0]);
-//
-//     if (applyRule(rules->data[0], ruleNames, rules, &state, ctx)) {
-//         return ctx->returnValue;
-//
-//     } else {
-//         fatal("Couldn't parse grammar\n");
-//         return NULL;
-//     }
-// }
-//

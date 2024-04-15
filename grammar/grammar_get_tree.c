@@ -148,13 +148,11 @@ void Action119_function(Context *ctx) {
 #define $$ ctx->returnValue
 #define yytext ctx->input
 #define s ctx->vars->data[0]
-#define s ctx->vars->data[1]
 
 void Action126_function(Context *ctx) {
 	 $$ = newNot(s); 
 }
 
-#undef s
 #undef s
 #undef $$
 #undef yytext
@@ -163,15 +161,11 @@ void Action126_function(Context *ctx) {
 #define $$ ctx->returnValue
 #define yytext ctx->input
 #define s ctx->vars->data[0]
-#define s ctx->vars->data[1]
-#define s ctx->vars->data[2]
 
 void Action132_function(Context *ctx) {
 	 $$ = s; 
 }
 
-#undef s
-#undef s
 #undef s
 #undef $$
 #undef yytext

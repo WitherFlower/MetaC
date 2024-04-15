@@ -12,6 +12,8 @@ common_src = files([
   'list.c',
   'grammar_objects.c',
   'wonkyregex.c',
+  'objects.c',
+  'dict.c',
 ])
 
 grammar = executable(
@@ -60,6 +62,7 @@ thing2 = custom_target(
 test_list = executable(
   'test_list',
   common_src + ['test_list.c'],
+  dependencies: [pcre2],
 )
 
 test('list', test_list)

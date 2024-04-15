@@ -154,11 +154,11 @@ void insertSorted(List *list, void *object) {
 
 int indexOfByValue(List *list, void *object) {
     
-    // for (int i = 0; i < list->used; i++) {
-    //     if (objectEquals(object, list->data[i])) {
-    //         return i;
-    //     }
-    // }
+    for (int i = 0; i < list->used; i++) {
+        if (equals(object, list->data[i])) {
+            return i;
+        }
+    }
 
     return -1;
 }

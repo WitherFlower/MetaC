@@ -63,7 +63,7 @@ oop addSymbolToSymbolList(List *symbolList, oop symbol);
 
 oop addNewStringToSymbolList(List *symbolList, char *string);
 
-int objectEquals(oop obj, oop other);
+int equals(oop obj, oop other);
 
 void printTree(oop grammar);
 
