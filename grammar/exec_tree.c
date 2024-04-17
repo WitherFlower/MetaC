@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <unistd.h>
 
 #include "grammar_objects.h"
@@ -12,9 +13,10 @@ int main() {
 
     StrVec *input = StrVec_new();
     
-    char buf[1];
-    while (read(0, buf, 1) > 0) {
-        StrVec_push(input, buf[0]);
+    char buf;
+
+    while ((buf = getchar()) > 0) {
+        StrVec_push(input, buf);
     }
     StrVec_push(input, '\0');
     

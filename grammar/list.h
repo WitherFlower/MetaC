@@ -20,7 +20,8 @@ void insertAt(List *list, unsigned int index, void *object);
 
 /*
  * Finds the index of a given object in the list
- * Implies the list is sorted by pointer value
+ *
+ * Implies that the list is sorted by pointer value
  */
 int indexOf(List *list, void *object); 
 
