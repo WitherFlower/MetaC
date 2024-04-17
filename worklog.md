@@ -1,10 +1,28 @@
+# 2024-04-17
+
+- [x] Convince Piumarta先生 to use Kotlin's string templating
+- [x] Generic pointer experimentation
+- [x] Use getchar() for faster file reading
+
+# 2024-04-16
+
+- [x] Meeting with Piumarta先生
+    Takeaways :
+        - Maybe Makefile isn't that bad
+        - Change file reading to use getchar() (faster and literally simpler)
+        - Convert object system to using prototypes
+        - Draft of the meta scripting language
+
+# 2024-04-15
+
+- [x] Repair build stuff
+- [x] Test writing tree
+- [x] Refactor tree evaluation to use object system
+
 # 2024-04-12
 
 - [x] Refactor printing tree to use object system
 - [x] Refactor writing tree to use object system
-- [ ] Repair build stuff
-- [ ] Test writing tree
-- [ ] Refactor tree evaluation to use object system
 
 # 2024-04-11
 
