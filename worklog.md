@@ -1,3 +1,13 @@
+# 2024-04-18
+
+- [x] Write a draft of the interpreted language's grammar
+- [ ] Understand Piumarta先生's prototype example
+- Plan for the next few days :
+    - Prototype system
+    - Grammar for the interpreted language
+    - Store actions as subtrees
+    - Make those executable (look at the example for that)
+
 # 2024-04-17
 
 - [x] Convince Piumarta先生 to use Kotlin's string templating
