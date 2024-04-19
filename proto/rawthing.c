@@ -96,7 +96,7 @@ char *Buffer_content(Buffer *buf)
 union object;
 typedef union object *oop;
 
-enum  type {
+enum  Type {
      Undefined ,  Integer ,  Float ,  String ,  Primitive ,  Symbol ,  Object
 };
 
@@ -125,18 +125,18 @@ enum typecode {
 };
 #undef   declareType
 
-struct property  { oop key, val; };
+struct Property     { oop key, val; };
 
-struct Integer      { enum type type;  long _value; };
-struct Float        { enum type type;  double _value; };
-struct String       { enum type type;  int length;  char *value; };
-struct Symbol       { enum type type;  char *name;  oop value;  enum typecode typecode; };
-struct Primitive { enum type type;  int fixed;  oop name;  prim_t function; };
-struct Object    { enum type type;  int isize, icap, psize;  oop delegate, *indexed;  struct property *properties; };
+struct Integer      { enum Type type;  long _value; };
+struct Float        { enum Type type;  double _value; };
+struct String       { enum Type type;  int length;  char *value; };
+struct Symbol       { enum Type type;  char *name;  oop value;  enum typecode typecode; };
+struct Primitive    { enum Type type;  int fixed;  oop name;  prim_t function; };
+struct Object       { enum Type type;  int isize, icap, psize;  oop delegate, *indexed;  struct Property *properties; };
 
 union object
 {
-    enum   type      type;
+    enum   Type      type;
     struct Integer   Integer;
     struct Float     Float;
     struct String    String;
@@ -149,7 +149,7 @@ union object _nil = { Undefined };
 
 #define nil (&_nil)
 
-enum type getType(oop obj)
+enum Type getType(oop obj)
 {
 # if TAGS
     if ((intptr_t)obj & TAGMASK) return ((intptr_t)obj & TAGMASK);
@@ -163,9 +163,9 @@ char *getTypeName(oop obj)
     return typeNames[type];
 }
 
-int is(enum type type, oop obj)    { return type == getType(obj); }
+int is(enum Type type, oop obj)    { return type == getType(obj); }
 
-oop _checkType(oop obj, enum type type, char *file, int line)
+oop _checkType(oop obj, enum Type type, char *file, int line)
 {
     if (getType(obj) != type) fatal("%s:%d: expected type %d, got %d\n", file, line, type, getType(obj));
     return obj;
@@ -184,7 +184,7 @@ oop _checkType(oop obj, enum type type, char *file, int line)
 
 #define make(TYPE)    make_(sizeof(struct TYPE), TYPE)
 
-oop make_(size_t size, enum type type)
+oop make_(size_t size, enum Type type)
 {
     oop obj = xmalloc(size);
     obj->type = type;
@@ -379,7 +379,7 @@ oop new(oop delegate)
 
 oop newObjectWithDelegateIndexedProps(oop delegate,
                       int isize, oop *indexed,
-                      int psize, struct property *properties)
+                      int psize, struct Property *properties)
 {
     oop obj = make(Object);
     _set(obj, Object,delegate,   delegate);
@@ -429,7 +429,7 @@ oop cloneEmpty(oop obj)
 ssize_t Object_find(oop obj, oop key)
 {
     ssize_t lo = 0, hi =  get(obj, Object,psize) - 1;    // asserts obj is Object
-    struct property *kvs = _get(obj, Object,properties);
+    struct Property *kvs = _get(obj, Object,properties);
     while (lo <= hi) {
     ssize_t mid = (lo + hi) / 2;
     oop  midkey = kvs[mid].key;
@@ -485,7 +485,7 @@ oop setvar(oop obj, oop key, oop val)
 oop Object_put(oop obj, oop key, oop val)
 {
     ssize_t ind = Object_find(obj, key);
-    struct property *kvs = _get(obj, Object,properties);
+    struct Property *kvs = _get(obj, Object,properties);
     if (ind < 0) {
     int size = _get(obj, Object,psize);
     ind = -1 - ind;                    assert(0 <= ind && ind <= size);
@@ -534,7 +534,7 @@ Buffer *printOn(Buffer *buf, oop obj, int indent)
         }
         if (!indent) break;
         int psize = _get(obj, Object,psize);
-        struct property *props = _get(obj, Object,properties);
+        struct Property *props = _get(obj, Object,properties);
         for (int i = 0; i < psize;  ++i) {
         Buffer_append(buf, '\n');
         for (int j = indent;  j--;) Buffer_appendAll(buf, "  | ");
@@ -798,12 +798,12 @@ oop newBinop(int operation, oop lhs, oop rhs)
 // prod    = l:postfix ( STAR r:postfix        { l = newBinop(opMul, l, r) }
 //            )*                { $$ = l }
 //
-// postfix    = p:primary
+// postfix   = p:primary
 //           ( LBRAK e:expr RBRAK !ASSIGN        { p = newGetArray(p, e) }
-//       | DOT   i:id a:args  !ASSIGN            { p = newInvoke(p, i, a) }
+//           | DOT   i:id a:args  !ASSIGN        { p = newInvoke(p, i, a) }
 //           | DOT   i:id         !ASSIGN        { p = newGetProp(p, i) }
 //           |            a:args  !ASSIGN        { p = newCall(p, a) }
-//       )*                    { $$ = p }
+//           )*                    { $$ = p }
 //
 // args    = LPAREN a:mklist
 //       ( ( k:id COLON e:expr            { Object_put(a, k, e) }
@@ -1053,9 +1053,9 @@ oop evargs(oop list, oop env)
     int          isize    = _get(list, Object,isize);
     int          psize    = _get(list, Object,psize);
     oop         *indexed  = _get(list, Object,indexed);
-    struct property *props    = _get(list, Object,properties);
+    struct Property *props    = _get(list, Object,properties);
     oop             *indexed2 = isize ? xmalloc(sizeof(*indexed2) * isize) : 0;
-    struct property *props2   = psize ? xmalloc(sizeof(*props2  ) * psize) : 0;
+    struct Property *props2   = psize ? xmalloc(sizeof(*props2  ) * psize) : 0;
 
     for (int i = 0;  i < isize;  ++i)
         indexed2[i] = eval(indexed[i], env);
@@ -1140,7 +1140,7 @@ int main(int argc, char **argv)
 {
     GC_INIT();
 
-#if 1 // be a language
+#if 0 // be a language
 
 # define defineProp(NAME)     prop_##NAME = intern("__"#NAME"__");
     doProperties(defineProp);

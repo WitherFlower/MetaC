@@ -1,43 +1,43 @@
 #include "objects.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
+#include <assert.h>
 
-#include "dict.h"
-
-static Dict *Types = NULL;
-
-void initTypes() {
-    if (Types == NULL) {
-        Types = newDict();
-    } else {
-        fprintf(stderr, "Error: Tried to init global type list twice\n");
-    }
+void fatal(char *format, ...) {
+    va_list ap;
+    va_start(ap, format);
+    fprintf(stderr, "\n");
+    vfprintf(stderr, format, ap);
+    fprintf(stderr, "\n");
+    va_end(ap);
+    exit(1);
 }
 
-int declareType(char *name, Dict *methods) {
-
-    if (get(Types, name) != NULL) {
-        fprintf(stderr, "Error: tried to redeclare existing type %s\n", name);
-        return 0;
-    }
-
-    set(Types, name, methods);
-    return 1;
+const char *getTypeName(oop obj) {
+    int type = getType(obj);            assert(0 <= type && type <= indexableSize(typeNames));
+    return typeNames[type];
 }
 
-oop newObject(char *typeName) {
-    Dict *methods = get(Types, typeName);
+oop _checkType(oop obj, enum Type type, char *file, int line) {
+    if (getType(obj) != type) fatal("%s:%d: expected type %d, got %d\n", file, line, type, getType(obj));
+    return obj;
+}
 
-    if (methods == NULL) {
-        fprintf(stderr, "Tried creating an object of inexistant type %s.\n", typeName);
-        exit(1);
-    }
+enum Type getType(oop obj) {
+# if TAGS
+    if ((intptr_t)obj & TAGMASK) return ((intptr_t)obj & TAGMASK);
+# endif
+    return obj->type;
+}
 
-    oop obj = malloc(sizeof(struct Object));
-    obj->type = typeName;
-    obj->properties = newDict();
-    obj->methods = methods;
+int is(enum Type type, oop obj)    { return type == getType(obj); }
+
+oop make_(size_t size, enum Type type) {
+    oop obj = xmalloc(size);
+    obj->type = type;
     return obj;
 }
 

@@ -55,8 +55,6 @@ oop newAction(char *value, void (*function)());
 
 oop newIdentifier(char *value);
 
-// oop newInteger(int value);
-
 oop newSymbol(char *string);
 
 oop addSymbolToSymbolList(List *symbolList, oop symbol);

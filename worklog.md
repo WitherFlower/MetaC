@@ -1,7 +1,14 @@
+# 2024-04-19
+
+- [x] Understand Piumarta先生's prototype example
+- [ ] Convert existing code to use prototypes
+        Next few things :
+        - Constructors for primitive types
+        - Keep going down and yoinking the example file
+
 # 2024-04-18
 
 - [x] Write a draft of the interpreted language's grammar
-- [ ] Understand Piumarta先生's prototype example
 - Plan for the next few days :
     - Prototype system
     - Grammar for the interpreted language
