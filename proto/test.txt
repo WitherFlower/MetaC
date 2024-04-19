@@ -1,0 +1,80 @@
+// nil is the undefined object
+// integers, floats, strings are as usual
+// #<identifier> is a symbol literal
+
+print(nil, " ", 42, " ", 3.14, " string ", #Symbol, " newline \n");
+
+// the prototypical object types used in the implementation have global names
+// e.g., Object is the prototypical object at the root of the delegation hierarchy
+
+print("Object  => ", Object,  "\n");  // this prints as <Object>
+print("Lambda  => ", Lambda,  "\n");  // this prints as <Lambda>
+print("Closure => ", Closure, "\n");  // this prints as <Closure>
+
+// create a new object instance by asking an existing one to be the delegate for a new instance
+// e.g., to create a new object that delegates to the prototype Object...
+
+o = Object.new();
+
+print("o = Object.new() => ", o, "\n");
+
+// this prints as <<Object>> because the number of <> surrounding the name tells you
+// how many levels of delegation were needed before the __name__ property was found
+
+// arguments can be positional and/or key:value pairs
+// for the new() method, the arguments become the properties of the newly created object
+
+o = Object.new(foo: 42, bar: 666);
+
+print("o = Object.new(foo:42, bar: 666) => ", o, "\n", full: 1);
+print("o.foo => ", o.foo, "\n");
+
+// to create a new type make a prototype with a __name__ that delegates to another prototype
+
+Point = Object.new(__name__: #Point);
+
+// objects can be created from the new prototype because it delegates to the Object prototype,
+// in other words the new prototype 'inherits' Object.new()
+
+// objects created from the new prototype will inherit its __name__ property
+
+print("Point.new()           => ", Point.new(),           "\n");
+print("Point.new(x: 3, y: 4) => ", Point.new(x: 3, y: 4), "\n", full: 1);
+
+// anonymous functions are written: "(parameters...) { statements... }"
+// all statements return values
+// the last statement implicitly provides a return value for the entire function
+
+double = (x) { x+x; };
+
+print("twice 21 is ", double(21), "\n");
+
+// use the keyword argument "full:x" (where x is non-nil) to make the print primitive
+// recursively print the entire contents of any objects it encounters
+
+print("double => ", double, "\n", full:1);
+
+// anonymous functions installed as properties of a prototype become methods
+// for all objects that delegate to the prototype
+
+Point.magnitude = () { sqrt(self.x * self.x + self.y * self.y); };
+
+m = Point.new(x: 3, y: 4).magnitude();
+
+print("Point.new(x:3, y:4).magnitude() => ", m, "\n");
+
+// functions close over their dynamic environment when created
+// (yes, I know, something needs to be done about all the nasty semicolons)
+
+makeCounter = (n)
+{
+  n = n - 1;          // make the counter return n the first time it is called
+  () { n = n + 1; };  // the counter is an anonymous function, closing over n, that increments n
+};
+
+counter = makeCounter(40);
+
+print(counter(), "\n");
+print(counter(), "\n");
+print(counter(), "\n");
+print(counter(), "\n");
