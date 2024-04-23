@@ -6,7 +6,7 @@
 /// Utils
 
 #ifndef GC
-#define GC 0
+#define GC 1
 #endif
 
 #if GC

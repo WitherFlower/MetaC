@@ -1,6 +1,7 @@
 # 2024-04-23
 
 - [x] Debugged the tree printing, GC was causing memory corruption
+- [x] Fix GC memory corruption (generated parser was calling regular malloc)
 - [ ] Parse actions in their most basic form
 - [ ] Writing Rewrite
 - [ ] Evaluator

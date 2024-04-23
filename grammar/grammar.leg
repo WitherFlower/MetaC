@@ -8,6 +8,10 @@
 
 #define YYSTYPE oop
 
+#define YY_MALLOC(C, N)		GC_malloc(N)
+#define YY_REALLOC(C, P, N)	GC_realloc(P, N)
+#define YY_FREE(C, P)		GC_free(P)
+
 %}
 
 grammar =       - r:root
@@ -111,6 +115,178 @@ comment =       '#' ( !end-of-line . )* end-of-line
 end-of-line =   '\r\n' | '\n' | '\r'
 end-of-file =   !.
 
+# start	= - ( s:stmt				{ yysval = s }
+# 	    | !.				{ yysval = 0 }
+# 	    | < (!EOL .)* >			{ fatal("syntax error near: %s", yytext) }
+# 	    )
+#
+# stmt	= WHILE LPAREN c:expr RPAREN s:stmt	{ $$ = newWhile(c, s) }
+# 	| IF LPAREN c:expr RPAREN s:stmt
+# 	  ( ELSE t:stmt				{ $$ = newIf(c, s, t  ) }
+# 	  |					{ $$ = newIf(c, s, nil) }
+# 	  )
+# 	| b:block				{ $$ = newBlock(b) }
+# 	| e:expr SEMI				{ $$ = e }
+#
+# expr	= p:primary
+# 	  ( DOT   i:id         ASSIGN e:expr 	{ $$ = newSetProp(p, i, e) }
+#           | LBRAK i:expr RBRAK ASSIGN e:expr	{ $$ = newSetArray(p, i, e) }
+# 	  )
+# 	| i:id ASSIGN e:expr 			{ $$ = newSetVar(i, e) }
+# 	| logor
+#
+# logor	= l:logand ( BARBAR r:logand		{ l = newBinop(opLogOr,  l, r) }
+# 		   )*				{ $$ = l }
+#
+# logand	= l:bitor ( ANDAND r:bitor		{ l = newBinop(opLogAnd, l, r) }
+# 		  )*				{ $$ = l }
+#
+# bitor	= l:bitxor ( OR r:bitxor		{ l = newBinop(opBitOr,  l, r) }
+# 		   )*				{ $$ = l }
+#
+# bitxor	= l:bitand ( XOR r:bitand		{ l = newBinop(opBitXor, l, r) }
+# 		   )*				{ $$ = l }
+#
+# bitand	= l:eq ( AND r:eq			{ l = newBinop(opBitAnd, l, r) }
+# 	       )*				{ $$ = l }
+#
+# eq	= l:ineq ( EQ    r:ineq			{ l = newBinop(opEq,    l, r) }
+# 	  	 | NOTEQ r:ineq			{ l = newBinop(opNotEq, l, r) }
+# 	  	 )*				{ $$ = l }
+#
+# ineq	= l:shift ( LESS   r:shift		{ l = newBinop(opLess,   l, r) }
+# 	  	  | LESSEQ r:shift		{ l = newBinop(opLessEq, l, r) }
+# 	  	  | GRTREQ r:shift		{ l = newBinop(opGrtrEq, l, r) }
+# 	  	  | GRTR   r:shift		{ l = newBinop(opGrtr,   l, r) }
+# 	  	  )*				{ $$ = l }
+#
+# shift	= l:sum ( SHL r:sum			{ l = newBinop(opShl, l, r) }
+# 	  	| SHR r:sum			{ l = newBinop(opShr, l, r) }
+# 	  	)*				{ $$ = l }
+#
+# sum	= l:prod ( PLUS  r:prod			{ l = newBinop(opAdd, l, r) }
+# 	  	 | MINUS r:prod			{ l = newBinop(opSub, l, r) }
+# 	  	 )*				{ $$ = l }
+#
+# prod	= l:postfix ( STAR  r:postfix		{ l = newBinop(opMul, l, r) }
+# 	  	    | SLASH r:postfix		{ l = newBinop(opDiv, l, r) }
+# 	  	    | PCENT r:postfix		{ l = newBinop(opMod, l, r) }
+# 	  	    )*				{ $$ = l }
+#
+# postfix	= p:primary
+#           ( LBRAK e:expr RBRAK !ASSIGN		{ p = newGetArray(p, e) }
+# 	  | DOT   i:id a:args  !ASSIGN	        { p = newInvoke(p, i, a) }
+#           | DOT   i:id         !ASSIGN		{ p = newGetProp(p, i) }
+#           |            a:args  !ASSIGN		{ p = newCall(p, a) }
+# 	  )*					{ $$ = p }
+#
+# args	= LPAREN a:mklist
+# 	  ( ( k:id COLON e:expr			{ Object_put(a, k, e) }
+# 	    | e:expr				{ Object_push(a, e) }
+# 	    )
+#             ( COMMA ( k:id COLON e:expr		{ Object_put(a, k, e) }
+# 	    	    | e:expr			{ Object_push(a, e) }
+# 		    ) )* )? RPAREN		{ $$ = a }
+#
+# params	= LPAREN p:mklist
+# 	  ( i:id				{ Object_push(p, i) }
+#             ( COMMA i:id 			{ Object_push(p, i) }
+# 	    )* )? RPAREN			{ $$ = p }
+#
+# mklist	= 					{ $$ = new(pObject) }
+#
+# primary	= nil | number | string | symbol | var | lambda | subexpr
+#
+# lambda	= p:params b:block			{ $$ = newLambda(p, b) }
+#
+# subexpr	= LPAREN e:expr RPAREN			{ $$ = e }
+#
+# block	= LBRACE b:mklist
+# 	    (  e:stmt		 		{ Object_push(b, e) }
+# 	    )* RBRACE				{ $$ = b }
+#
+# nil   	= NIL					{ $$ = nil }
+#
+# number	= "-" u:unsign				{ $$ = neg(u) }
+# 	| "+" n:number				{ $$ = u }
+# 	|     u:unsign				{ $$ = u }
+#
+# unsign	= < DIGIT+ '.' DIGIT* EXP? > -		{ $$ = newFloat(strtod(yytext, 0)) }
+# 	| < DIGIT* '.' DIGIT+ EXP? > -		{ $$ = newFloat(strtod(yytext, 0)) }
+# 	| "0" [bB] < BIGIT+ > -			{ $$ = newInteger(strtol(yytext, 0,  2)) }
+# 	| "0" [xX] < HIGIT+ > -			{ $$ = newInteger(strtol(yytext, 0, 16)) }
+# 	| "0" < OIGIT* > -			{ $$ = newInteger(strtol(yytext, 0,  8)) }
+# 	| < DIGIT+ > -				{ $$ = newInteger(strtol(yytext, 0, 10)) }
+#
+# string	= '"' < ( !'"' . )* > '"' -		{ $$ = newStringEscaped(yytext) }
+# 	| "'" < ( !"'" . )* > "'" -		{ $$ = newStringEscaped(yytext) }
+#
+# symbol	= HASH i:id				{ $$ = i }
+#
+# var	= i:id					{ $$ = newGetVar(i) }
+#
+# id	= < LETTER ALNUM* > -			{ $$ = intern(yytext) }
+#
+# BIGIT	= [0-1]
+# OIGIT	= [0-7]
+# DIGIT	= [0-9]
+# HIGIT	= [0-9A-Fa-f]
+# LETTER	= [A-Za-z_]
+# ALNUM	= LETTER | DIGIT
+# SIGN	= [-+]
+# EXP	= [eE] SIGN DIGIT+
+#
+# -	= SPACE*
+#
+# SPACE	= [ \t\n\r] | '//' (!EOL .)*
+# EOL	= [\n\r]
+#
+# NIL	= "nil"   !ALNUM  -
+# WHILE	= "while" !ALNUM  -
+# IF	= "if"    !ALNUM  -
+# ELSE	= "else"  !ALNUM  -
+#
+# HASH	= "#"      	-
+# SEMI	= ";"      	-
+# ASSIGN	= "="  ![=] 	-
+# COMMA	= ","      	-
+# COLON	= ":"      	-
+# LPAREN	= "(" 		-
+# RPAREN	= ")" 		-
+# LBRAK	= "[" 		-
+# RBRAK	= "]" 		-
+# LBRACE	= "{" 		-
+# RBRACE	= "}" 		-
+# BARBAR  = "||" ![=]	-
+# ANDAND  = "&&" ![=]	-
+# OR	= "|"  ![|=]	-
+# XOR	= "^"  ![=]	-
+# AND	= "&"  ![&=]	-
+# EQ	= "=="	     	-
+# NOTEQ	= "!="	     	-
+# LESS    = "<"  ![<=]   	-
+# LESSEQ  = "<="   	-
+# GRTREQ  = ">="   	-
+# GRTR    = ">"  ![=] 	-
+# SHL	= "<<" ![=]   	-
+# SHR	= ">>" ![=]   	-
+# PLUS	= "+"  ![+=]   	-
+# MINUS	= "-"  ![-=]    -
+# STAR	= "*"  ![=]     -
+# SLASH	= "/"  ![/=]    -
+# PCENT	= "%"  ![*=]    -
+# DOT	= "."	     	-
+#
+# # EQUAL	= "=="       -
+# # PLING	= "!"	     -
+# # AND	= "&"	     -
+# # COLON	= ":"	     -
+# # PLUS	= "+"	     -
+# # STAR	= "*"	     -
+# # QUERY	= "?"	     -
+# # BAR	= "|"	     -
+# # LANGLE	= "<" -
+# # RANGLE	= ">" -
 %%
 
 int main()
