@@ -1,10 +1,18 @@
+# 2024-04-23
+
+- [x] Debugged the tree printing, GC was causing memory corruption
+- [ ] Parse actions in their most basic form
+- [ ] Writing Rewrite
+- [ ] Evaluator
+
+# 2024-04-22
+
+- [x] Replace underlying object system with 先生's prototype system example
+- [x] Convert tree printing code to use prototypes
+
 # 2024-04-19
 
 - [x] Understand Piumarta先生's prototype example
-- [ ] Convert existing code to use prototypes
-        Next few things :
-        - Constructors for primitive types
-        - Keep going down and yoinking the example file
 
 # 2024-04-18
 

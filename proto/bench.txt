@@ -1,0 +1,10 @@
+nfib = (n) { if (n < 2) 1; else nfib(n-1) + nfib(n-2) + 1; };
+
+then  = cputime();
+calls = nfib(32);
+now   = cputime();
+secs  = now - then;
+
+print(calls, " calls in ",
+      secs, " seconds = ",
+      round(calls / secs), " calls/sec\n");

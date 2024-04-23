@@ -2,17 +2,18 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
-#include "grammar_objects.h"
+#include "objects.h"
 
 #define YYSTYPE oop
 
 %}
 
 grammar =       - r:root
-               ( declaration | d:definition { getMethod(r, "addRuleDefinition")(r, d); } )+
+               ( declaration | d:definition { Object_push(r, d); } )+
                trailer? end-of-file
-               { printTree(r); writeTree(r); }
+               { printTree(r); /*writeTree(r);*/ }
 
 root = { $$ = newGrammar(); }
 
@@ -66,12 +67,12 @@ primary =       i1:identifier COLON i2:ruleCallIdent !EQUAL     { $$ = newAssign
 |               BEGIN                                           { $$ = newBegin(); }
 |               END                                             { $$ = newEnd(); }
 
-identifier =    < [-a-zA-Z_][-a-zA-Z_0-9]* > -                  { $$ = newString(yytext); }
+identifier =    < [-a-zA-Z_][-a-zA-Z_0-9]* > -                  { $$ = newStringEscaped(yytext); }
 
 ruleCallIdent = < [-a-zA-Z_][-a-zA-Z_0-9]* > -                  { $$ = newIdentifier(yytext); }
 
-literal =       ['] < ( !['] char )* > ['] -                    { $$ = newString(yytext); }
-|               ["] < ( !["] char )* > ["] -                    { $$ = newString(yytext); }
+literal =       ['] < ( !['] char )* > ['] -                    { $$ = newStringEscaped(yytext); }
+|               ["] < ( !["] char )* > ["] -                    { $$ = newStringEscaped(yytext); }
 
 class =         '[' < ( !']' range )* > ']' -                   { $$ = newCharacterClass(yytext); }
 
@@ -82,7 +83,7 @@ char =          '\\' [abefnrtv'"\[\]\\]
 |               '\\' [0-7][0-7]?
 |               !'\\' .
 
-action =        '{' < braces* > '}' -                           { $$ = newAction(yytext, NULL); }
+action =        '{' < braces* > '}' -                           { $$ = newAction(yytext, nil); }
 
 braces =        '{' braces* '}'
 |               !'}' .
@@ -114,7 +115,7 @@ end-of-file =   !.
 
 int main()
 {
-    declareTypes();
+    initPrototypeSystem();
     while (yyparse());
 
     return 0;

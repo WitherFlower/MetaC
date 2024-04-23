@@ -69,7 +69,7 @@ print("Point.new(x:3, y:4).magnitude() => ", m, "\n");
 makeCounter = (n)
 {
   n = n - 1;          // make the counter return n the first time it is called
-  () { n = n + 1; };  // the counter is an anonymous function, closing over n, that increments n
+  () { print(__env__(), "\n", full:1);  n = n + 1; };  // the counter is an anonymous function, closing over n, that increments n
 };
 
 counter = makeCounter(40);
@@ -78,3 +78,69 @@ print(counter(), "\n");
 print(counter(), "\n");
 print(counter(), "\n");
 print(counter(), "\n");
+
+test = (x) { print(x, " "); if (x) print("yes\n"); else print("no\n"); };
+
+test(nil);
+test(1);
+test("hello");
+
+nfib = (n) { if (n < 2) 1; else nfib(n-1) + nfib(n-2) + 1; };
+
+print(nfib(5), "\n");
+print(nfib(15), "\n");
+
+tf = (n) { if (n) print(1); else print(0); };
+
+tf(0 <  1);  tf(1 <  1);  tf(2 <  1);  print("\n");
+tf(0 <= 1);  tf(1 <= 1);  tf(2 <= 1);  print("\n");
+tf(0 >= 1);  tf(1 >= 1);  tf(2 >= 1);  print("\n");
+tf(0 >  1);  tf(1 >  1);  tf(2 >  1);  print("\n");
+
+tf(0 == 1);  tf(1 == 1);  tf(2 == 1);  print("\n");
+tf(0 != 1);  tf(1 != 1);  tf(2 != 1);  print("\n");
+
+print(16 << 0); print(16 << 1); print(16 << 2); print(16 << 3); print("\n");
+print(16 >> 0); print(16 >> 1); print(16 >> 2); print(16 >> 3); print("\n");
+
+print(0b101010, " ");
+print(052, " ");
+print(42, " ");
+print(0x2a, "\n");
+
+bin__ = (n, b, w) {
+  if (n >= 2 || w > 1) bin__(truncate(n / 2), b, w - 1);
+  print(n % 2);
+};
+
+bin = (n) {
+  b = Object.new();
+  bin__(n, b, 4);
+//  while (b.length() > 0) print(b.pop());
+  print("\n");
+};
+
+bin(42);
+
+bin(0b1110 | 0b0111);
+bin(0b1110 ^ 0b0111);
+bin(0b1110 & 0b0111);
+
+t = () { print("t");  1; };
+f = () { print("f");  nil; };
+
+print("f||f "); print(f() || f(), "\n");
+print("f||t "); print(f() || t(), "\n");
+print("t||f "); print(t() || f(), "\n");
+print("t||t "); print(t() || t(), "\n");
+
+print("f&&f "); print(f() && f(), "\n");
+print("f&&t "); print(f() && t(), "\n");
+print("t&&f "); print(t() && f(), "\n");
+print("t&&t "); print(t() && t(), "\n");
+
+1   || print("fail\n");
+nil && print("fail\n");
+nil || print("ok\n");
+1   && print("ok\n");
+
