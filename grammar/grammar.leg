@@ -8,16 +8,19 @@
 
 #define YYSTYPE oop
 
-#define YY_MALLOC(C, N)		GC_malloc(N)
-#define YY_REALLOC(C, P, N)	GC_realloc(P, N)
-#define YY_FREE(C, P)		GC_free(P)
+#define YY_MALLOC(C, N)        GC_malloc(N)
+#define YY_REALLOC(C, P, N)    GC_realloc(P, N)
+#define YY_FREE(C, P)        GC_free(P)
 
 %}
 
 grammar =       - r:root
-               ( declaration | d:definition { Object_push(r, d); } )+
-               trailer? end-of-file
-               { printTree(r); /*writeTree(r);*/ }
+                ( declaration
+                | d:definition { Object_push(r, d); } 
+                )+
+                trailer? end-of-file
+                { printTree(r); }
+                
 
 root = { $$ = newGrammar(); }
 
@@ -25,7 +28,7 @@ declaration =   '%{' < ( !'%}' . )* > RPERCENT
 
 trailer =       '%%' < .* >
 
-definition =    i:identifier EQUAL e:expression SEMICOLON?      { $$ = newDefinition(i, e); }
+definition =    i:identifier ASSIGN e:expression SEMI?          { $$ = newDefinition(i, e); }
 
 expression =    s1:sequence (
                     BAR s2:sequence                             { s1 = newAlternation(s1, s2); } 
@@ -44,16 +47,6 @@ prefix =        AND action
                 | NOT s:suffix                                  { $$ = newNot(s); }
                 | s:suffix                                      { $$ = s; }
                 )
-#                | ip:initPrefix
-#                ( AND                                           { ip = '&'; }
-#                | NOT                                           { ip = '!'; }
-#                )? s:suffix                                     {
-#                                                                    if (ip == '&')     { $$ = newUnary(And, s); }
-#                                                                    if (ip == '!')     { $$ = newUnary(Not, s); }
-#                                                                    else                    { $$ = s; }
-#                                                                }
-
-#initPrefix = { $$ = 0; }
 
 suffix =        p:primary
                 ( QUERY                                         { p = newOptional(p); }
@@ -61,9 +54,9 @@ suffix =        p:primary
                 | PLUS                                          { p = newPlus(p); }
                 )?                                              { $$ = p; }
 
-primary =       i1:identifier COLON i2:ruleCallIdent !EQUAL     { $$ = newAssignment(i1, i2); }
-|               i:ruleCallIdent !EQUAL                          { $$ = i; }
-|               OPEN e:expression CLOSE                         { $$ = e; }
+primary =       i1:identifier COLON i2:ruleCallIdent !ASSIGN    { $$ = newAssignment(i1, i2); }
+|               i:ruleCallIdent !ASSIGN                         { $$ = i; }
+|               LPAREN e:expression RPAREN                      { $$ = e; }
 |               l:literal                                       { $$ = l; }
 |               c:class                                         { $$ = c; }
 |               DOT                                             { $$ = newDot(); }
@@ -87,27 +80,10 @@ char =          '\\' [abefnrtv'"\[\]\\]
 |               '\\' [0-7][0-7]?
 |               !'\\' .
 
-action =        '{' < braces* > '}' -                           { $$ = newAction(yytext, nil); }
+action =        m:metaBlock -                           { $$ = newAction(m); }
 
-braces =        '{' braces* '}'
-|               !'}' .
-
-EQUAL =         '=' -
-COLON =         ':' -
-SEMICOLON =     ';' -
-BAR =           '|' -
-AND =           '&' -
-NOT =           '!' -
-QUERY =         '?' -
-STAR =          '*' -
-PLUS =          '+' -
-OPEN =          '(' -
-CLOSE =         ')' -
-DOT =           '.' -
-BEGIN =         '<' -
-END =           '>' -
-TILDE =         '~' -
-RPERCENT =      '%}' -
+# braces =        '{' braces* '}'
+# |               !'}' .
 
 - =             ( space | comment )*
 space =         ' ' | '\t' | end-of-line
@@ -115,178 +91,192 @@ comment =       '#' ( !end-of-line . )* end-of-line
 end-of-line =   '\r\n' | '\n' | '\r'
 end-of-file =   !.
 
-# start	= - ( s:stmt				{ yysval = s }
-# 	    | !.				{ yysval = 0 }
-# 	    | < (!EOL .)* >			{ fatal("syntax error near: %s", yytext) }
-# 	    )
+### Meta language grammar
+
+metaStatement   = # WHILE LPAREN c:expr RPAREN s:metaStatement      { $$ = newWhile(c, s) }
+                # | IF LPAREN c:expr RPAREN s:metaStatement
+                #   ( ELSE t:metaStatement                          { $$ = newIf(c, s, t  ) }
+                #   |                                               { $$ = newIf(c, s, nil) }
+                #   )
+                  b:metaBlock                                       { $$ = newBlock(b); }
+                | e:metaExpression SEMI                             { $$ = e; }
 #
-# stmt	= WHILE LPAREN c:expr RPAREN s:stmt	{ $$ = newWhile(c, s) }
-# 	| IF LPAREN c:expr RPAREN s:stmt
-# 	  ( ELSE t:stmt				{ $$ = newIf(c, s, t  ) }
-# 	  |					{ $$ = newIf(c, s, nil) }
-# 	  )
-# 	| b:block				{ $$ = newBlock(b) }
-# 	| e:expr SEMI				{ $$ = e }
+metaExpression  = p:metaPrimary
+                ( DOT   i:metaId               ASSIGN e:metaExpression  # { $$ = newSetProp(p, i, e) }
+                | LBRAK i:metaExpression RBRAK ASSIGN e:metaExpression  # { $$ = newSetArray(p, i, e) }
+                )
+                | (i:metaId | i:retval)        ASSIGN e:metaExpression  { $$ = newSetVar(i, e); }
+                | pf:metaPostfix                                        { $$ = pf; }
+#     | logor
+
+# logor    = l:logand ( BARBAR r:logand        { l = newBinop(opLogOr,  l, r) }
+#            )*                { $$ = l }
 #
-# expr	= p:primary
-# 	  ( DOT   i:id         ASSIGN e:expr 	{ $$ = newSetProp(p, i, e) }
-#           | LBRAK i:expr RBRAK ASSIGN e:expr	{ $$ = newSetArray(p, i, e) }
-# 	  )
-# 	| i:id ASSIGN e:expr 			{ $$ = newSetVar(i, e) }
-# 	| logor
+# logand    = l:bitor ( ANDAND r:bitor        { l = newBinop(opLogAnd, l, r) }
+#           )*                { $$ = l }
 #
-# logor	= l:logand ( BARBAR r:logand		{ l = newBinop(opLogOr,  l, r) }
-# 		   )*				{ $$ = l }
+# bitor    = l:bitxor ( OR r:bitxor        { l = newBinop(opBitOr,  l, r) }
+#            )*                { $$ = l }
 #
-# logand	= l:bitor ( ANDAND r:bitor		{ l = newBinop(opLogAnd, l, r) }
-# 		  )*				{ $$ = l }
+# bitxor    = l:bitand ( XOR r:bitand        { l = newBinop(opBitXor, l, r) }
+#            )*                { $$ = l }
 #
-# bitor	= l:bitxor ( OR r:bitxor		{ l = newBinop(opBitOr,  l, r) }
-# 		   )*				{ $$ = l }
+# bitand    = l:eq ( AND r:eq            { l = newBinop(opBitAnd, l, r) }
+#            )*                { $$ = l }
 #
-# bitxor	= l:bitand ( XOR r:bitand		{ l = newBinop(opBitXor, l, r) }
-# 		   )*				{ $$ = l }
+# eq    = l:ineq ( EQ    r:ineq            { l = newBinop(opEq,    l, r) }
+#            | NOTEQ r:ineq            { l = newBinop(opNotEq, l, r) }
+#            )*                { $$ = l }
 #
-# bitand	= l:eq ( AND r:eq			{ l = newBinop(opBitAnd, l, r) }
-# 	       )*				{ $$ = l }
+# ineq    = l:shift ( LESS   r:shift        { l = newBinop(opLess,   l, r) }
+#             | LESSEQ r:shift        { l = newBinop(opLessEq, l, r) }
+#             | GRTREQ r:shift        { l = newBinop(opGrtrEq, l, r) }
+#             | GRTR   r:shift        { l = newBinop(opGrtr,   l, r) }
+#             )*                { $$ = l }
 #
-# eq	= l:ineq ( EQ    r:ineq			{ l = newBinop(opEq,    l, r) }
-# 	  	 | NOTEQ r:ineq			{ l = newBinop(opNotEq, l, r) }
-# 	  	 )*				{ $$ = l }
+# shift    = l:sum ( SHL r:sum            { l = newBinop(opShl, l, r) }
+#           | SHR r:sum            { l = newBinop(opShr, l, r) }
+#           )*                { $$ = l }
 #
-# ineq	= l:shift ( LESS   r:shift		{ l = newBinop(opLess,   l, r) }
-# 	  	  | LESSEQ r:shift		{ l = newBinop(opLessEq, l, r) }
-# 	  	  | GRTREQ r:shift		{ l = newBinop(opGrtrEq, l, r) }
-# 	  	  | GRTR   r:shift		{ l = newBinop(opGrtr,   l, r) }
-# 	  	  )*				{ $$ = l }
+# sum    = l:prod ( PLUS  r:prod            { l = newBinop(opAdd, l, r) }
+#            | MINUS r:prod            { l = newBinop(opSub, l, r) }
+#            )*                { $$ = l }
 #
-# shift	= l:sum ( SHL r:sum			{ l = newBinop(opShl, l, r) }
-# 	  	| SHR r:sum			{ l = newBinop(opShr, l, r) }
-# 	  	)*				{ $$ = l }
+# prod    = l:postfix ( STAR  r:postfix        { l = newBinop(opMul, l, r) }
+#               | SLASH r:postfix        { l = newBinop(opDiv, l, r) }
+#               | PCENT r:postfix        { l = newBinop(opMod, l, r) }
+#               )*                { $$ = l }
+
+metaPostfix = p:metaPrimary
+            ( 
+            # LBRAK e:metaExpression RBRAK  !ASSIGN     { p = newGetArray(p, e) }
+            # DOT   i:metaId         a:args !ASSIGN     { p = newInvoke(p, i, a) }
+            # DOT   i:metaId                !ASSIGN     { p = newGetProp(p, i) }
+                                     a:args !ASSIGN     { p = newCall(p, a); }
+            )*                                          { $$ = p; }
+
+args        = LPAREN a:mklist
+            ( 
+                ( k:metaId COLON e:metaExpression       { Object_put(a, k, e); }
+                    | e:metaExpression                  { Object_push(a, e); }
+                )
+                ( COMMA 
+                    ( k:metaId COLON e:metaExpression   { Object_put(a, k, e); }
+                        | e:metaExpression              { Object_push(a, e); }
+                    ) 
+                )* 
+            )? RPAREN        { $$ = a; }
+
+# params    = LPAREN p:mklist
+#       ( i:id                { Object_push(p, i); }
+#             ( COMMA i:id             { Object_push(p, i); }
+#         )* )? RPAREN            { $$ = p; }
+
+mklist      =                                   { $$ = new(pObject); }
+
+# metaPrimary = nil | number | string | symbol | var | lambda | subexpr
+metaPrimary = nil | metaVar | metaSubExpr
+
+# lambda    = p:params b:block                { $$ = newLambda(p, b); }
+
+metaSubExpr = LPAREN e:metaExpression RPAREN    { $$ = e; }
+
+metaBlock   =  LBRACE b:mklist
+            (  e:metaStatement                  { Object_push(b, e); }
+            )* RBRACE                           { $$ = b; }
+
+nil         = NIL                               { $$ = nil; }
+retval      = RETVAL                            { $$ = newReturnValue(); }
+
+# number    = "-" u:unsign                { $$ = neg(u); }
+#     | "+" n:number                { $$ = u; }
+#     |     u:unsign                { $$ = u; }
 #
-# sum	= l:prod ( PLUS  r:prod			{ l = newBinop(opAdd, l, r) }
-# 	  	 | MINUS r:prod			{ l = newBinop(opSub, l, r) }
-# 	  	 )*				{ $$ = l }
+# unsign    = < DIGIT+ '.' DIGIT* EXP? > -        { $$ = newFloat(strtod(yytext, 0)); }
+#     | < DIGIT* '.' DIGIT+ EXP? > -        { $$ = newFloat(strtod(yytext, 0)); }
+#     | "0" [bB] < BIGIT+ > -            { $$ = newInteger(strtol(yytext, 0,  2)); }
+#     | "0" [xX] < HIGIT+ > -            { $$ = newInteger(strtol(yytext, 0, 16)); }
+#     | "0" < OIGIT* > -            { $$ = newInteger(strtol(yytext, 0,  8)); }
+#     | < DIGIT+ > -                { $$ = newInteger(strtol(yytext, 0, 10)); }
 #
-# prod	= l:postfix ( STAR  r:postfix		{ l = newBinop(opMul, l, r) }
-# 	  	    | SLASH r:postfix		{ l = newBinop(opDiv, l, r) }
-# 	  	    | PCENT r:postfix		{ l = newBinop(opMod, l, r) }
-# 	  	    )*				{ $$ = l }
+# string    = '"' < ( !'"' . )* > '"' -        { $$ = newStringEscaped(yytext); }
+#     | "'" < ( !"'" . )* > "'" -        { $$ = newStringEscaped(yytext); }
 #
-# postfix	= p:primary
-#           ( LBRAK e:expr RBRAK !ASSIGN		{ p = newGetArray(p, e) }
-# 	  | DOT   i:id a:args  !ASSIGN	        { p = newInvoke(p, i, a) }
-#           | DOT   i:id         !ASSIGN		{ p = newGetProp(p, i) }
-#           |            a:args  !ASSIGN		{ p = newCall(p, a) }
-# 	  )*					{ $$ = p }
+# symbol    = HASH i:id                { $$ = i; }
+
+metaVar     = i:metaId                      { $$ = newGetVar(i); }
+
+metaId      = < LETTER ALNUM* > -           { $$ = intern(yytext); }
+
+# BIGIT    = [0-1]
+# OIGIT    = [0-7]
+DIGIT    = [0-9]
+# HIGIT    = [0-9A-Fa-f]
+LETTER    = [A-Za-z_]
+ALNUM    = LETTER | DIGIT
+# SIGN    = [-+]
+# EXP    = [eE] SIGN DIGIT+
 #
-# args	= LPAREN a:mklist
-# 	  ( ( k:id COLON e:expr			{ Object_put(a, k, e) }
-# 	    | e:expr				{ Object_push(a, e) }
-# 	    )
-#             ( COMMA ( k:id COLON e:expr		{ Object_put(a, k, e) }
-# 	    	    | e:expr			{ Object_push(a, e) }
-# 		    ) )* )? RPAREN		{ $$ = a }
+# -    = SPACE*
 #
-# params	= LPAREN p:mklist
-# 	  ( i:id				{ Object_push(p, i) }
-#             ( COMMA i:id 			{ Object_push(p, i) }
-# 	    )* )? RPAREN			{ $$ = p }
-#
-# mklist	= 					{ $$ = new(pObject) }
-#
-# primary	= nil | number | string | symbol | var | lambda | subexpr
-#
-# lambda	= p:params b:block			{ $$ = newLambda(p, b) }
-#
-# subexpr	= LPAREN e:expr RPAREN			{ $$ = e }
-#
-# block	= LBRACE b:mklist
-# 	    (  e:stmt		 		{ Object_push(b, e) }
-# 	    )* RBRACE				{ $$ = b }
-#
-# nil   	= NIL					{ $$ = nil }
-#
-# number	= "-" u:unsign				{ $$ = neg(u) }
-# 	| "+" n:number				{ $$ = u }
-# 	|     u:unsign				{ $$ = u }
-#
-# unsign	= < DIGIT+ '.' DIGIT* EXP? > -		{ $$ = newFloat(strtod(yytext, 0)) }
-# 	| < DIGIT* '.' DIGIT+ EXP? > -		{ $$ = newFloat(strtod(yytext, 0)) }
-# 	| "0" [bB] < BIGIT+ > -			{ $$ = newInteger(strtol(yytext, 0,  2)) }
-# 	| "0" [xX] < HIGIT+ > -			{ $$ = newInteger(strtol(yytext, 0, 16)) }
-# 	| "0" < OIGIT* > -			{ $$ = newInteger(strtol(yytext, 0,  8)) }
-# 	| < DIGIT+ > -				{ $$ = newInteger(strtol(yytext, 0, 10)) }
-#
-# string	= '"' < ( !'"' . )* > '"' -		{ $$ = newStringEscaped(yytext) }
-# 	| "'" < ( !"'" . )* > "'" -		{ $$ = newStringEscaped(yytext) }
-#
-# symbol	= HASH i:id				{ $$ = i }
-#
-# var	= i:id					{ $$ = newGetVar(i) }
-#
-# id	= < LETTER ALNUM* > -			{ $$ = intern(yytext) }
-#
-# BIGIT	= [0-1]
-# OIGIT	= [0-7]
-# DIGIT	= [0-9]
-# HIGIT	= [0-9A-Fa-f]
-# LETTER	= [A-Za-z_]
-# ALNUM	= LETTER | DIGIT
-# SIGN	= [-+]
-# EXP	= [eE] SIGN DIGIT+
-#
-# -	= SPACE*
-#
-# SPACE	= [ \t\n\r] | '//' (!EOL .)*
-# EOL	= [\n\r]
-#
-# NIL	= "nil"   !ALNUM  -
-# WHILE	= "while" !ALNUM  -
-# IF	= "if"    !ALNUM  -
-# ELSE	= "else"  !ALNUM  -
-#
-# HASH	= "#"      	-
-# SEMI	= ";"      	-
-# ASSIGN	= "="  ![=] 	-
-# COMMA	= ","      	-
-# COLON	= ":"      	-
-# LPAREN	= "(" 		-
-# RPAREN	= ")" 		-
-# LBRAK	= "[" 		-
-# RBRAK	= "]" 		-
-# LBRACE	= "{" 		-
-# RBRACE	= "}" 		-
-# BARBAR  = "||" ![=]	-
-# ANDAND  = "&&" ![=]	-
-# OR	= "|"  ![|=]	-
-# XOR	= "^"  ![=]	-
-# AND	= "&"  ![&=]	-
-# EQ	= "=="	     	-
-# NOTEQ	= "!="	     	-
-# LESS    = "<"  ![<=]   	-
-# LESSEQ  = "<="   	-
-# GRTREQ  = ">="   	-
-# GRTR    = ">"  ![=] 	-
-# SHL	= "<<" ![=]   	-
-# SHR	= ">>" ![=]   	-
-# PLUS	= "+"  ![+=]   	-
-# MINUS	= "-"  ![-=]    -
-# STAR	= "*"  ![=]     -
-# SLASH	= "/"  ![/=]    -
-# PCENT	= "%"  ![*=]    -
-# DOT	= "."	     	-
-#
-# # EQUAL	= "=="       -
-# # PLING	= "!"	     -
-# # AND	= "&"	     -
-# # COLON	= ":"	     -
-# # PLUS	= "+"	     -
-# # STAR	= "*"	     -
-# # QUERY	= "?"	     -
-# # BAR	= "|"	     -
-# # LANGLE	= "<" -
-# # RANGLE	= ">" -
+# SPACE    = [ \t\n\r] | '//' (!EOL .)*
+# EOL    = [\n\r]
+
+BAR =           '|' -
+NOT =           '!' -
+QUERY =         '?' -
+BEGIN =         '<' -
+END =           '>' -
+TILDE =         '~' -
+RPERCENT =      '%}' -
+
+NIL    = "nil"   !ALNUM  -
+# WHILE    = "while" !ALNUM  -
+# IF    = "if"    !ALNUM  -
+# ELSE    = "else"  !ALNUM  -
+RETVAL = "$$" -
+
+# HASH    = "#"          -
+SEMI    = ";"          -
+ASSIGN    = "="  ![=]     -
+COMMA    = ","          -
+COLON    = ":"          -
+LPAREN    = "("         -
+RPAREN    = ")"         -
+LBRAK    = "["         -
+RBRAK    = "]"         -
+LBRACE    = "{"         -
+RBRACE    = "}"         -
+# BARBAR  = "||" ![=]    -
+# ANDAND  = "&&" ![=]    -
+# OR    = "|"  ![|=]    -
+# XOR    = "^"  ![=]    -
+AND    = "&"  ![&=]    -
+# EQ    = "=="             -
+# NOTEQ    = "!="             -
+# LESS    = "<"  ![<=]       -
+# LESSEQ  = "<="       -
+# GRTREQ  = ">="       -
+# GRTR    = ">"  ![=]     -
+# SHL    = "<<" ![=]       -
+# SHR    = ">>" ![=]       -
+PLUS    = "+"  ![+=]       -
+# MINUS    = "-"  ![-=]    -
+STAR    = "*"  ![=]     -
+# SLASH    = "/"  ![/=]    -
+# PCENT    = "%"  ![*=]    -
+DOT    = "."             -
+
+# EQUAL    = "=="       -
+# PLING    = "!"         -
+# AND    = "&"         -
+# COLON    = ":"         -
+# PLUS    = "+"         -
+# STAR    = "*"         -
+# QUERY    = "?"         -
+# BAR    = "|"         -
+# LANGLE    = "<" -
+# RANGLE    = ">" -
 %%
 
 int main()

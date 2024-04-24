@@ -59,7 +59,7 @@ typedef struct Property {
     oop val;
 } Property;
 
-#define doProtos(_) _(Object) _(Grammar) _(Definition) _(Assignment) _(Sequence) _(Alternation) _(Star) _(Plus) _(Optional) _(And) _(Not) _(Dot) _(Begin) _(End) _(String) _(CharacterClass) _(Action) _(Identifier)
+#define doProtos(_) _(Object) _(Grammar) _(Definition) _(Assignment) _(Sequence) _(Alternation) _(Star) _(Plus) _(Optional) _(And) _(Not) _(Dot) _(Begin) _(End) _(String) _(CharacterClass) _(Action) _(Identifier) _(GetVar) _(SetVar) _(GetProp) _(SetProp) _(GetArray) _(SetArray) _(Call) _(Invoke) _(Lambda) _(Closure) _(Binop) _(If) _(While) _(Block) _(ReturnValue)
 
 #define declarePrototype(NAME)    t##NAME,
 enum Prototype {
@@ -233,9 +233,19 @@ oop newEnd();
 
 oop newCharacterClass(char *value);
 
-oop newAction(char *value, oop body);
+oop newAction(oop body);
 
 oop newIdentifier(char *value);
+
+oop newGetVar(oop name);
+
+oop newSetVar(oop name, oop expr);
+
+oop newCall(oop function, oop arguments);
+
+oop newBlock(oop body);
+
+oop newReturnValue();
 
 // Function definitions
 

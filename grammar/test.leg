@@ -1,2 +1,92 @@
-char = '\\'
+%{
 
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+
+#include "objects.h"
+
+#define YYSTYPE oop
+
+#define YY_MALLOC(C, N)        GC_malloc(N)
+#define YY_REALLOC(C, P, N)    GC_realloc(P, N)
+#define YY_FREE(C, P)        GC_free(P)
+
+%}
+
+grammar =       - r:root
+               ( declaration
+               | d:definition { Object_push(r, d); } 
+               )+
+               trailer? end-of-file
+               { printTree(r); }
+                
+
+root = { $$ = newGrammar(); }
+
+declaration =   '%{' < ( !'%}' . )* > RPERCENT
+
+trailer =       '%%' < .* >
+
+definition =    i:identifier ASSIGN e:expression SEMI?          { $$ = newDefinition(i, e); }
+
+expression =    s1:sequence (
+                    BAR s2:sequence                             { s1 = newAlternation(s1, s2); } 
+                )*                                              { $$ = s1; }
+
+# Was error+ before, rewritten for reasons
+sequence =      e:error (
+                    f:error                                     { e = newSequence(e, f); }
+                )*                                              { $$ = e; }
+
+error =         p:prefix ( TILDE action )?                      { $$ = p; }
+
+prefix =        AND action
+                |
+                ( AND s:suffix                                  { $$ = newAnd(s); }
+                | NOT s:suffix                                  { $$ = newNot(s); }
+                | s:suffix                                      { $$ = s; }
+                )
+
+suffix =        p:primary
+                ( QUERY                                         { p = newOptional(p); }
+                | STAR                                          { p = newStar(p); }
+                | PLUS                                          { p = newPlus(p); }
+                )?                                              { $$ = p; }
+
+primary =       i1:identifier COLON i2:ruleCallIdent !ASSIGN    { $$ = newAssignment(i1, i2); }
+|               i:ruleCallIdent !ASSIGN                         { $$ = i; }
+|               LPAREN e:expression RPAREN                      { $$ = e; }
+|               l:literal                                       { $$ = l; }
+|               c:class                                         { $$ = c; }
+|               DOT                                             { $$ = newDot(); }
+|               a:action                                        { $$ = a; }
+|               BEGIN                                           { $$ = newBegin(); }
+|               END                                             { $$ = newEnd(); }
+
+identifier =    < [-a-zA-Z_][-a-zA-Z_0-9]* > -                  { $$ = newStringEscaped(yytext); }
+
+ruleCallIdent = < [-a-zA-Z_][-a-zA-Z_0-9]* > -                  { $$ = newIdentifier(yytext); }
+
+literal =       ['] < ( !['] char )* > ['] -                    { $$ = newStringEscaped(yytext); }
+|               ["] < ( !["] char )* > ["] -                    { $$ = newStringEscaped(yytext); }
+
+class =         '[' < ( !']' range )* > ']' -                   { $$ = newCharacterClass(yytext); }
+
+range =         char '-' char | char
+
+char =          '\\' [abefnrtv'"\[\]\\]
+|               '\\' [0-3][0-7][0-7]
+|               '\\' [0-7][0-7]?
+|               !'\\' .
+
+action =        m:metaBlock -                           { $$ = newAction(m); }
+
+# braces =        '{' braces* '}'
+# |               !'}' .
+
+- =             ( space | comment )*
+space =         ' ' | '\t' | end-of-line
+comment =       '#' ( !end-of-line . )* end-of-line
+end-of-line =   '\r\n' | '\n' | '\r'
+end-of-file =   !.

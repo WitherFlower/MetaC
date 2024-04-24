@@ -643,11 +643,9 @@ oop newCharacterClass(char *value) {
     return o;
 }
 
-oop newAction(char *value, oop body) {
-    oop string = newString(value);
+oop newAction(oop body) {
     oop o = new(pAction);
-    Object_put(o, sym_value, string);
-    // Object_put(o, sym_body, body);
+    Object_put(o, sym_body, body);
     return o;
 }
 
@@ -655,6 +653,39 @@ oop newIdentifier(char *value) {
     oop string = newString(value);
     oop o = new(pIdentifier);
     Object_put(o, sym_value, string);
+    return o;
+}
+
+/// Metalanguage objects constuctors
+
+oop newGetVar(oop name) {
+    oop o = new(pGetVar);
+    Object_put(o, sym_name, name);
+    return o;
+}
+
+oop newSetVar(oop name, oop expr) {
+    oop o = new(pSetVar);
+    Object_put(o, sym_name, name);
+    Object_put(o, sym_expr, expr);
+    return o;
+}
+
+oop newCall(oop function, oop arguments) {
+    oop o = new(pCall);
+    Object_put(o, sym_function , function );
+    Object_put(o, sym_arguments, arguments);
+    return o;
+}
+
+oop newBlock(oop body) {
+    oop o = new(pBlock);
+    Object_put(o, sym_body, body);
+    return o;
+}
+
+oop newReturnValue() {
+    oop o = new(pReturnValue);
     return o;
 }
 
